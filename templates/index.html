@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Movie App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* subtle noise grain */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        /* glow orb — driven by JS */
+        #glow-orb {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80vw;
+            height: 60vh;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.22) 0%, rgba(242,108,58,0.10) 45%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(8px);
+            will-change: transform, opacity;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            margin: 0 0 48px 0;
+            font-size: clamp(52px, 12vw, 200px);
+            line-height: 0.92;
+            color: transparent;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -2px;
+        }
+
+        input {
+            width: 80%;
+            max-width: 900px;
+            padding: 18px 22px;
+            font-size: 18px;
+            font-family: 'DM Sans', sans-serif;
+            border-radius: 14px;
+            border: 1.5px solid var(--border);
+            outline: none;
+            background: var(--card);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        input:focus {
+            border-color: rgba(232,51,74,0.5);
+            box-shadow: 0 0 0 4px rgba(232,51,74,0.08), 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        input::placeholder { color: var(--muted); }
+
+        #results {
+            margin-top: 10px;
+            width: 80%;
+            max-width: 900px;
+            max-height: 50vh;
+            overflow-y: auto;
+            border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #results::-webkit-scrollbar { width: 4px; }
+        #results::-webkit-scrollbar-track { background: transparent; }
+        #results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .movie {
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.12s, transform 0.1s;
+            display: flex;
+            align-items: center;
+        }
+
+        .movie img.thumb {
+            width: 44px;
+            height: 66px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+
+        .movie .meta { flex: 1; }
+        .movie .meta strong { display: block; font-size: 15px; font-weight: 600; color: var(--text); }
+        .movie .meta .year { color: var(--muted); font-size: 13px; margin-top: 3px; }
+
+        .movie:hover {
+            background: var(--card);
+            transform: translateX(3px);
+        }
+
+        .top-links {
+            position: fixed;
+            top: 24px;
+            left: 28px;
+            z-index: 100;
+        }
+
+        .top-links a {
+            color: var(--text);
+            text-decoration: none;
+            margin-right: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .top-links a:hover {
+            border-color: rgba(232,51,74,0.4);
+            background: var(--surface);
+        }
+
+        a {
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        a:hover { color: var(--text); }
+
+        .top-right {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-right a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s, background 0.15s;
+            margin: 0;
+        }
+
+        .top-right a:hover {
+            border-color: rgba(232,51,74,0.4);
+            background: var(--surface);
+        }
+
+        .top-right .user {
+            font-size: 13px;
+            color: var(--muted);
+            padding: 7px 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .flash-item {
+            background: rgba(232,51,74,0.08);
+            border-left: 3px solid var(--red);
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 14px;
+            text-align: left;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+        }
+
+        /* ---- Recommendations strip ---- */
+        /* shared strip styles */
+        .strip-section {
+            width: 80%;
+            max-width: 900px;
+            margin-top: 36px;
+            position: relative;
+            z-index: 1;
+        }
+        .strip-peek {
+            /* 1 row peek: card 150px + title ~32px + gap 12px ≈ 194px, minus a little so next row just peeks */
+            max-height: 174px;
+            overflow: hidden;
+            position: relative;
+            transition: max-height 0.55s cubic-bezier(0.4,0,0.2,1);
+        }
+        /* 3 rows max: (150+32+12)*3 - 12 gap = 566 */
+        .strip-peek.expanded { max-height: 578px; }
+        .strip-peek::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, var(--bg));
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .strip-peek.expanded::after { opacity: 0; }
+        .rec-label {
+            font-size: 11px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
+            margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+        }
+        .rec-label a { font-size: 11px; color: var(--red); letter-spacing: 1px; }
+        .rec-scroll { display: flex; gap: 12px; flex-wrap: wrap; }
+        .rec-card { flex-shrink: 0; width: 100px; cursor: pointer; transition: transform 0.18s; position: relative; }
+        .rec-card.seen-card img { opacity: 0.45; }
+        .rec-seen-badge {
+            position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+            background: rgba(240,69,106,0.88); color: #fff;
+            font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+            padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+            pointer-events: none;
+        }
+        .rec-card:hover { transform: translateY(-4px); }
+        .rec-card img {
+            width: 100px; height: 150px; object-fit: cover;
+            border-radius: 8px; display: block; background: var(--card);
+        }
+        .rec-card .rec-title {
+            font-size: 11px; color: var(--muted); margin-top: 6px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+        }
+        .rec-card .rec-because {
+            font-size: 10px; color: rgba(240,69,106,0.7);
+            text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rec-card .rec-count {
+            font-size: 10px; color: rgba(240,69,106,0.55);
+            text-align: center;
+        }
+        .strip-expand-btn {
+            display: block; text-align: center; margin-top: 6px;
+            font-size: 12px; color: var(--muted); cursor: pointer;
+            padding: 8px 0 4px; transition: color 0.15s;
+            background: none; border: none; width: 100%; font-family: 'DM Sans', sans-serif;
+        }
+        .strip-expand-btn:hover { color: var(--text); }
+        .rec-no-content { font-size: 13px; color: var(--muted); padding: 12px 0 80px; position: relative; z-index: 2; }
+        .rec-no-content a { color: var(--red); }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="top-right">
+        {% if user %}
+        <span class="user">{{ user.username }}</span>
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+        {% else %}
+        <a href="/login">Login</a>
+        {% endif %}
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash" id="flash-block" style="position: fixed; top: 70px; right: 28px; max-width: 360px; z-index:1000; display:flex; flex-direction:column; gap:6px;">
+                {% for m in messages %}
+                    <div class="flash-item">{{ m }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="top-links">
+        <a href="/watchlist">Watchlist</a>
+        <a href="/diary">Diary</a>
+        <a href="/feed">Feed</a>
+        <a href="/leaderboard">Leaderboard</a>
+        {% if user %}<a href="/ai-chat" style="background:linear-gradient(135deg,rgba(232,51,74,0.18),rgba(242,108,58,0.18));border-color:rgba(232,51,74,0.35);">AI Chat</a>{% endif %}
+    </div>
+
+    <h1>MovieLand.</h1>
+
+    <input type="text" id="search" placeholder="Search for a movie...">
+
+    <div id="results"></div>
+
+    {% if user %}
+    <!-- Friends Watch -->
+    <div class="strip-section" id="fw-section">
+        <div class="strip-peek" id="fw-peek">
+            <div class="rec-label">
+                Friends Watch
+                <a href="/profile">Manage friends</a>
+            </div>
+            <div id="fw-scroll" class="rec-scroll"></div>
+        </div>
+        <button class="strip-expand-btn" id="fw-expand-btn" style="display:none;" onclick="toggleStrip('fw')">Show all ↓</button>
+    </div>
+    {% endif %}
+
+    <!-- Popular on MovieLand (always visible when logged in or not) -->
+    <div class="strip-section" id="pop-section">
+        <div class="strip-peek" id="pop-peek">
+            <div class="rec-label">Popular on MovieLand</div>
+            <div id="pop-scroll" class="rec-scroll"></div>
+        </div>
+        <button class="strip-expand-btn" id="pop-expand-btn" style="display:none;" onclick="toggleStrip('pop')">Show all ↓</button>
+    </div>
+
+    <script>
+        const input = document.getElementById("search");
+        const resultsDiv = document.getElementById("results");
+
+    let debounceTimeout = null;
+    let currentQuery = '';
+    let currentPage = 0;
+    let totalPages = 0;
+    let loading = false;
+    let allResults = [];
+
+        function renderMovie(movie) {
+            const div = document.createElement("div");
+            div.classList.add("movie");
+
+            const thumb = movie.poster ? `<img class=\"thumb\" src=\"${movie.poster}\">` : '';
+            const year = movie.year ? `<span class=\"year\">${movie.year}</span>` : '';
+
+            div.innerHTML = `
+                ${thumb}
+                <div class=\"meta\"><strong>${movie.title}</strong>${year}</div>
+            `;
+
+            div.onclick = () => { window.location.href = `/movie/${movie.id}`; };
+            return div;
+        }
+
+        async function fetchPage(page = 1, append = false) {
+            if (loading) return;
+            loading = true;
+            try {
+                const res = await fetch(`/search?q=${encodeURIComponent(currentQuery)}&page=${page}`);
+                if (!res.ok) throw new Error('network');
+                const data = await res.json();
+
+                const existing = new Set(allResults.map(r => r.id));
+                (data.results || []).forEach(r => { if (!existing.has(r.id)) { allResults.push(r); existing.add(r.id); } });
+
+                currentPage = data.page || page;
+                totalPages = data.total_pages || 0;
+
+                allResults.sort((a,b) => {
+                    const A = a.poster ? 0 : 1;
+                    const B = b.poster ? 0 : 1;
+                    if (A !== B) return A - B;
+                    return 0;
+                });
+
+                resultsDiv.innerHTML = '';
+                allResults.forEach(m => resultsDiv.appendChild(renderMovie(m)));
+            } catch (err) {
+                if (!append) resultsDiv.innerHTML = '<p>Error loading results...</p>';
+            } finally {
+                loading = false;
+            }
+        }
+
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                const q = input.value.trim();
+                if (!q) {
+                    currentQuery = '';
+                    currentPage = 0;
+                    totalPages = 0;
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+                currentQuery = q;
+                currentPage = 0;
+                totalPages = 0;
+                allResults = [];
+                fetchPage(1, false);
+            }, 300);
+        });
+
+        resultsDiv.addEventListener('scroll', () => {
+            if (loading) return;
+            if (!currentQuery) return;
+            if (currentPage >= totalPages) return;
+
+            const threshold = 120;
+            if (resultsDiv.scrollTop + resultsDiv.clientHeight >= resultsDiv.scrollHeight - threshold) {
+                fetchPage(currentPage + 1, true);
+            }
+        });
+    </script>
+
+    <script>
+    // ---- strip helpers ----
+    const stripState = {};
+
+    function makeCard(m, subline, subClass, seen) {
+        const card = document.createElement('div');
+        card.className = 'rec-card' + (seen ? ' seen-card' : '');
+        card.onclick = () => window.location.href = '/movie/' + m.id;
+        const img = m.poster
+            ? `<img src="${m.poster}" alt="${m.title}" loading="lazy">`
+            : `<div style="width:100px;height:150px;background:var(--card);border-radius:8px;"></div>`;
+        const seenBadge = seen ? `<div class="rec-seen-badge">✓ Seen</div>` : '';
+        card.innerHTML = `${img}${seenBadge}<div class="rec-title">${m.title}</div><div class="${subClass}" title="${subline}">${subline}</div>`;
+        return card;
+    }
+
+    function checkOverflow(peekId, btnId) {
+        setTimeout(() => {
+            const peek = document.getElementById(peekId);
+            const btn  = document.getElementById(btnId);
+            if (peek && btn && peek.scrollHeight > peek.clientHeight + 10) {
+                btn.style.display = 'block';
+            }
+        }, 120);
+    }
+
+    function toggleStrip(id) {
+        const peek = document.getElementById(id + '-peek');
+        const btn  = document.getElementById(id + '-expand-btn');
+        if (!peek) return;
+        stripState[id] = !stripState[id];
+        peek.classList.toggle('expanded', stripState[id]);
+        btn.textContent = stripState[id] ? 'Show less ↑' : 'Show all ↓';
+    }
+
+    // ---- Friends Watch ----
+    (async function loadFriendsWatch() {
+        const scroll = document.getElementById('fw-scroll');
+        if (!scroll) return;
+        try {
+            const res  = await fetch('/recommendations');
+            const data = await res.json();
+
+            if (!data.logged_in || data.no_friends) {
+                scroll.innerHTML = `<span class="rec-no-content">Add friends on your <a href="/profile">profile</a> to get picks from people you trust.</span>`;
+                return;
+            }
+            if (data.no_activity || !data.movies || data.movies.length === 0) {
+                scroll.innerHTML = `<span class="rec-no-content">Your friends haven\'t logged any movies yet — check back soon!</span>`;
+                return;
+            }
+            for (let i = data.movies.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [data.movies[i], data.movies[j]] = [data.movies[j], data.movies[i]];
+            }
+            data.movies.forEach(m => {
+                const because = m.because_movie ? m.because + ' liked ' + m.because_movie : m.because + "\'s pick";
+                scroll.appendChild(makeCard(m, because, 'rec-because'));
+            });
+            checkOverflow('fw-peek', 'fw-expand-btn');
+        } catch(e) {}
+    })();
+
+    // ---- Popular on MovieLand ----
+    (async function loadPopular() {
+        const scroll = document.getElementById('pop-scroll');
+        if (!scroll) return;
+        try {
+            const res  = await fetch('/popular');
+            const data = await res.json();
+            if (!data.movies || data.movies.length === 0) {
+                scroll.innerHTML = `<span class="rec-no-content">No data yet — start logging movies!</span>`;
+                return;
+            }
+            data.movies.forEach(m => {
+                const label = m.count === 1 ? '1 log' : m.count + ' logs';
+                scroll.appendChild(makeCard(m, label, 'rec-count', m.seen));
+            });
+            checkOverflow('pop-peek', 'pop-expand-btn');
+        } catch(e) {}
+    })();
+    </script>
+
+    <!-- Glow orb element -->
+    <div id="glow-orb"></div>
+
+    <script>
+        const orb = document.getElementById('glow-orb');
+        const W = () => window.innerWidth;
+        const H = () => window.innerHeight;
+        const orbW = () => orb.offsetWidth;
+        const orbH = () => orb.offsetHeight;
+
+        // Idle drift state
+        let driftX = W() / 2 - orbW() / 2;
+        let driftY = -orbH() * 0.3;
+        let driftVX = 0.18;   // slow side-to-side speed
+        let driftDir = 1;
+
+        // Mouse influence
+        let mouseX = W() / 2;
+        let mouseY = 0;
+        let isMouseNear = false;
+
+        // Current rendered position (lerped)
+        let curX = driftX;
+        let curY = driftY;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            // "near" = cursor is in the upper ~55% of screen
+            isMouseNear = e.clientY < H() * 0.55;
+        });
+
+        document.addEventListener('mouseleave', () => { isMouseNear = false; });
+
+        let lastTime = performance.now();
+
+        function tick(now) {
+            const dt = Math.min(now - lastTime, 50); // cap at 50ms
+            lastTime = now;
+
+            const maxDrift = W() * 0.25; // how far left/right from center it drifts
+            const centerX  = W() / 2 - orbW() / 2;
+
+            // Drift side to side
+            driftX += driftVX * driftDir * (dt / 16);
+            if (driftX > centerX + maxDrift) { driftDir = -1; }
+            if (driftX < centerX - maxDrift) { driftDir =  1; }
+
+            // Target: blend drift with mouse pull when cursor is near
+            let targetX, targetY, targetOpacity;
+            if (isMouseNear) {
+                // Pull toward cursor — orb center chases mouse, offset so it feels natural
+                const pullStrength = 0.55;
+                targetX = mouseX - orbW() / 2 + (driftX - centerX) * 0.2;
+                targetY = mouseY - orbH() * 0.5;
+                targetX = driftX + (targetX - driftX) * pullStrength;
+                targetY = driftY + (targetY - driftY) * pullStrength;
+                targetOpacity = 1.35; // slightly brighter near cursor
+            } else {
+                targetX = driftX;
+                targetY = driftY;
+                targetOpacity = 1;
+            }
+
+            // Smooth lerp
+            const ease = 1 - Math.pow(0.92, dt / 16);
+            curX += (targetX - curX) * ease;
+            curY += (targetY - curY) * ease;
+
+            orb.style.transform = `translate(${curX}px, ${curY}px)`;
+            orb.style.opacity   = targetOpacity;
+
+            requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+    </script>
+
+</body>
+
+</html>

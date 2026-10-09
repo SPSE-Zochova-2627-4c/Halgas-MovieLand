@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Profile - testuser</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: white;
+            font-family: Arial;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .username {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .open-diary {
+            background: #444;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .open-diary:hover { background: #555; }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 18px;
+            color: #ccc;
+            text-decoration: none;
+            background: rgba(255,255,255,0.03);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .back-home:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+        /* grid layout that adapts to 1..4 items; cap at 4 columns */
+        /* fixed 4-column layout; reserve horizontal space so items don't wrap under each other */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow-x: auto; /* allow horizontal scroll on small viewports */
+            padding-bottom: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            min-width: 1000px; /* ensure 4 columns keep their width before scrolling */
+        }
+
+        /* card without gray background; poster fills the card */
+        .card {
+            background: transparent;
+            border-radius: 8px;
+            padding: 0;
+            text-align: center;
+            display: block;
+            overflow: hidden;
+        }
+
+        /* uniform card height so layout is consistent; posters fill most of the card but leave room for title */
+        .card { height: 372px; }
+
+        /* poster fills the card area; title is a separate element below the card */
+        .poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .item { display: flex; flex-direction: column; }
+
+        .movie-title {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+            font-size: 16px;
+            text-align: center;
+            color: #fff;
+            padding: 6px 8px 0 8px;
+        }
+
+        .movie-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .empty {
+            color: #aaa;
+            font-size: 16px;
+            padding: 30px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-home">← Home</a>
+
+        <div class="header">
+            <div class="username">testuser</div>
+            <a class="open-diary" href="/diary">Open Diary</a>
+        </div>
+
+        
+        
+        
+        <div class="grid count-4">
+            
+            <div class="item">
+                <div class="card">
+                    <a href="/movie/137106">
+                        <img class="poster" src="https://image.tmdb.org/t/p/w200/lbctonEnewCYZ4FYoTZhs8cidAl.jpg" alt="The Lego Movie poster">
+                    </a>
+                </div>
+                <div class="movie-title">The Lego Movie</div>
+            </div>
+            
+            <div class="item">
+                <div class="card">
+                    <a href="/movie/19585">
+                        <img class="poster" src="https://image.tmdb.org/t/p/w200/9Tly3ZXTTsQKM26fis8v9LR4GxG.jpg" alt="G-Force poster">
+                    </a>
+                </div>
+                <div class="movie-title">G-Force</div>
+            </div>
+            
+            <div class="item">
+                <div class="card">
+                    <a href="/movie/120">
+                        <img class="poster" src="https://image.tmdb.org/t/p/w200/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg" alt="The Lord of the Rings: The Fellowship of the Ring poster">
+                    </a>
+                </div>
+                <div class="movie-title">The Lord of the Rings: The Fellowship of the Ring</div>
+            </div>
+            
+            <div class="item">
+                <div class="card">
+                    <a href="/movie/16577">
+                        <img class="poster" src="https://image.tmdb.org/t/p/w200/6AK3uOHaIbl6EDaytHYe4FinZMu.jpg" alt="Astro Boy poster">
+                    </a>
+                </div>
+                <div class="movie-title">Astro Boy</div>
+            </div>
+            
+            
+            
+        </div>
+        
+    </div>
+</body>
+
+</html>

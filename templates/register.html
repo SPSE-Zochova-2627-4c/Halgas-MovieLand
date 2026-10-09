@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            height: 60vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.14) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 18px;
+            width: 420px;
+            max-width: 100%;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 32px;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+            display: block;
+            letter-spacing: -1px;
+        }
+        h2 {
+            margin: 0 0 24px 0;
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--muted);
+        }
+        input {
+            width: 100%;
+            padding: 13px 16px;
+            margin: 6px 0;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        input:focus {
+            border-color: rgba(232,51,74,0.5);
+            box-shadow: 0 0 0 3px rgba(232,51,74,0.08);
+        }
+        input::placeholder { color: var(--muted); }
+        button {
+            width: 100%;
+            padding: 13px;
+            background: var(--grad);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        a {
+            color: var(--muted);
+            font-size: 14px;
+            display: block;
+            margin-top: 16px;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        a:hover { color: var(--text); }
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--muted);
+            text-decoration: none;
+            background: var(--surface);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
+        }
+        .back-home:hover { border-color: rgba(232,51,74,0.3); color: var(--text); }
+        .flash { margin-bottom: 14px; }
+        .flash-item {
+            background: rgba(232,51,74,0.08);
+            border-left: 3px solid var(--red);
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 14px;
+            text-align: left;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+        }
+        .top-right {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            z-index: 100;
+        }
+        .top-right a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: inline-block;
+            margin: 0;
+        }
+        .top-right a:hover { border-color: rgba(232,51,74,0.4); }
+        .field-wrap { position: relative; width: 100%; }
+        .field-hint {
+            display: block;
+            font-size: 12px;
+            min-height: 16px;
+            text-align: left;
+            margin: 2px 4px 6px;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-right">
+    {% if session.get('user_id') %}
+        <a href="/profile">Profile</a>
+    {% else %}
+        <a href="/login">Login</a>
+    {% endif %}
+</div>
+
+<div class="container">
+    <a href="/" class="back-home">← Home</a>
+    <span class="logo">MovieLand.</span>
+    <h2>Create your account</h2>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash" id="flash-block">
+                {% for m in messages %}
+                    <div class="flash-item">{{ m }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" id="reg-form" novalidate>
+        <div class="field-wrap">
+            <input type="text" name="username" id="username"
+                   placeholder="Username (3–20 chars, no spaces)"
+                   required minlength="3" maxlength="20" autocomplete="username">
+            <span class="field-hint" id="username-hint"></span>
+        </div>
+        <div class="field-wrap">
+            <input type="password" name="password" id="password"
+                   placeholder="Password (min 8 characters)"
+                   required minlength="8" autocomplete="new-password">
+            <span class="field-hint" id="password-hint"></span>
+        </div>
+        <div class="field-wrap">
+            <input type="password" name="confirm_password" id="confirm-password"
+                   placeholder="Confirm Password"
+                   required autocomplete="new-password">
+            <span class="field-hint" id="confirm-hint"></span>
+        </div>
+        <button type="submit">Register</button>
+    </form>
+
+    <script>
+        /* Flash auto-hide */
+        (function() {
+            const flash = document.getElementById('flash-block');
+            if (!flash) return;
+            setTimeout(() => {
+                flash.style.transition = 'opacity 360ms ease-out, max-height 360ms ease-out';
+                flash.style.opacity = '0';
+                flash.style.maxHeight = '0';
+                setTimeout(() => flash.remove(), 400);
+            }, 4000);
+        })();
+
+        /* Client-side validation */
+        (function() {
+            const form   = document.getElementById('reg-form');
+            const uInput = document.getElementById('username');
+            const pInput = document.getElementById('password');
+            const cInput = document.getElementById('confirm-password');
+            const uHint  = document.getElementById('username-hint');
+            const pHint  = document.getElementById('password-hint');
+            const cHint  = document.getElementById('confirm-hint');
+
+            const BANNED = [
+                'nigger','nigga','faggot','fag','kike','spic','chink','gook',
+                'tranny','retard','cunt','whore','slut','bastard','bitch',
+                'asshole','motherfucker','fuckface','dickhead','shithead',
+                'nazi','kkk','wetback','cracker','honky','beaner','zipperhead'
+            ];
+
+            function setHint(el, msg, ok) {
+                el.textContent = msg;
+                el.style.color = ok ? '#6fcf97' : '#E8334A';
+            }
+
+            function validateUsername() {
+                const v = uInput.value;
+                if (v.length < 3)  { setHint(uHint, 'At least 3 characters required.', false); return false; }
+                if (v.length > 20) { setHint(uHint, 'Maximum 20 characters.', false); return false; }
+                if (/\s/.test(v))  { setHint(uHint, 'No spaces allowed.', false); return false; }
+                if (!/^[A-Za-z0-9_.\-]+$/.test(v)) { setHint(uHint, 'Letters, numbers, _ . - only.', false); return false; }
+                const lower = v.toLowerCase();
+                if (BANNED.some(w => lower.includes(w))) { setHint(uHint, 'Username contains a prohibited word.', false); return false; }
+                setHint(uHint, '✓', true); return true;
+            }
+
+            function validatePassword() {
+                if (pInput.value.length < 8) { setHint(pHint, 'At least 8 characters required.', false); return false; }
+                setHint(pHint, '✓', true); return true;
+            }
+
+            function validateConfirm() {
+                if (!cInput.value)                 { setHint(cHint, '', false); return false; }
+                if (cInput.value !== pInput.value) { setHint(cHint, 'Passwords do not match.', false); return false; }
+                setHint(cHint, '✓', true); return true;
+            }
+
+            uInput.addEventListener('input', validateUsername);
+            pInput.addEventListener('input', () => { validatePassword(); if (cInput.value) validateConfirm(); });
+            cInput.addEventListener('input', validateConfirm);
+
+            form.addEventListener('submit', function(e) {
+                const ok = [validateUsername(), validatePassword(), validateConfirm()].every(Boolean);
+                if (!ok) e.preventDefault();
+            });
+        })();
+    </script>
+
+    <a href="/login">Already have an account? Login</a>
+</div>
+
+</body>
+</html>

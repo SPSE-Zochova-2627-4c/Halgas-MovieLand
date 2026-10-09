@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Identify a Film — MovieLand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+        }
+        .page-wrap {
+            max-width: 740px;
+            margin: 0 auto;
+            padding: 36px 24px 60px;
+        }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--muted); text-decoration: none;
+            font-size: 14px; transition: color .2s; margin-bottom: 24px;
+        }
+        .back-link:hover { color: var(--text); }
+
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px; margin-bottom: 8px;
+        }
+        .page-header p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+        .search-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .search-box label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--muted); margin-bottom: 10px; letter-spacing: 0.04em;
+        }
+        .search-box textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            resize: vertical;
+            min-height: 110px;
+            outline: none;
+            transition: border-color .2s;
+            line-height: 1.6;
+        }
+        .search-box textarea:focus { border-color: rgba(232,51,74,0.5); }
+        .search-box textarea::placeholder { color: var(--muted); }
+
+        .examples {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+        }
+        .example {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 6px 12px;
+            font-size: 12px; color: var(--muted);
+            cursor: pointer; transition: all .15s;
+        }
+        .example:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+
+        .identify-btn {
+            margin-top: 16px;
+            background: linear-gradient(135deg, var(--red), var(--orange));
+            border: none; border-radius: 10px;
+            padding: 13px 28px;
+            font-size: 15px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            color: #fff; cursor: pointer;
+            transition: opacity .15s;
+            width: 100%;
+        }
+        .identify-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* Results */
+        #results { display: none; }
+
+        .result-label {
+            font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+            color: var(--muted); margin-bottom: 12px;
+        }
+
+        /* Main result */
+        .main-result {
+            background: var(--card);
+            border: 1px solid rgba(232,51,74,0.3);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex; gap: 18px;
+            margin-bottom: 20px;
+            text-decoration: none;
+            color: var(--text);
+            transition: border-color .2s;
+        }
+        .main-result:hover { border-color: var(--red); }
+
+        .main-poster {
+            width: 72px; height: 108px;
+            border-radius: 8px; object-fit: cover;
+            background: var(--surface); flex-shrink: 0;
+        }
+        .main-poster-placeholder {
+            width: 72px; height: 108px;
+            border-radius: 8px; background: var(--surface);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; flex-shrink: 0;
+        }
+        .main-info { flex: 1; min-width: 0; }
+        .main-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; margin-bottom: 4px;
+        }
+        .main-year { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+        .main-explanation { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+        .confidence-badge {
+            display: inline-block;
+            background: rgba(232,51,74,0.15);
+            border: 1px solid rgba(232,51,74,0.35);
+            border-radius: 20px; padding: 3px 10px;
+            font-size: 11px; color: var(--red);
+            font-weight: 600; margin-bottom: 10px;
+        }
+
+        /* Alternatives */
+        .alt-grid {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .alt-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 16px;
+            display: flex; gap: 14px; align-items: center;
+            text-decoration: none; color: var(--text);
+            transition: border-color .2s;
+        }
+        .alt-card:hover { border-color: rgba(232,51,74,0.35); }
+        .alt-poster {
+            width: 36px; height: 54px; border-radius: 5px;
+            object-fit: cover; background: var(--surface); flex-shrink: 0;
+        }
+        .alt-poster-placeholder {
+            width: 36px; height: 54px; border-radius: 5px;
+            background: var(--surface); display: flex;
+            align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+        .alt-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .alt-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+        .loading-wrap {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 14px; padding: 40px 0; display: none;
+        }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg {
+            background: rgba(232,51,74,0.1);
+            border: 1px solid rgba(232,51,74,0.3);
+            border-radius: 10px; padding: 14px 18px;
+            font-size: 13px; color: var(--text);
+            display: none;
+        }
+
+        .try-again-btn {
+            background: none; border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 20px;
+            color: var(--muted); font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer; margin-top: 16px;
+            transition: all .15s;
+        }
+        .try-again-btn:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+    <a href="/" class="back-link">← Back</a>
+
+    <div class="page-header">
+        <h1>🔍 Identify a Film</h1>
+        <p>Pamätáš si dej, scénu alebo herca, ale nevieš názov? Opíš film čo najdetailnejšie a ja ti poviem, o čo ide.</p>
+    </div>
+
+    <div class="search-box">
+        <label>OPÍŠ FILM</label>
+        <textarea id="desc-input" placeholder="Napr. film kde chlap žije ten istý deň stále dokola a zamiluje sa do reportérky..."></textarea>
+
+        <div class="examples">
+            <div class="example" onclick="fillExample(this)">Chlapec čo prežije útok kúzelníka a ide do školy mágie</div>
+            <div class="example" onclick="fillExample(this)">Animovaný film o rybke čo hľadá svojho syna</div>
+            <div class="example" onclick="fillExample(this)">Futuristický film kde ľudia žijú v simulácii</div>
+            <div class="example" onclick="fillExample(this)">Film kde sa skupinka detí bráni zlodejom doma</div>
+        </div>
+
+        <button class="identify-btn" id="identify-btn" onclick="identify()">🔍 Identifikovať film</button>
+    </div>
+
+    <div class="loading-wrap" id="loading">
+        <div class="spinner"></div>
+        <div style="font-size:14px;color:var(--muted)">Hľadám film...</div>
+    </div>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div id="results">
+        <div class="result-label">NAJPRAVDEPODOBNEJŠÍ FILM</div>
+        <a id="main-card" class="main-result" href="#">
+            <div id="main-poster-wrap"></div>
+            <div class="main-info">
+                <div class="confidence-badge" id="confidence-badge">✓ Vysoká zhoda</div>
+                <div class="main-title" id="main-title"></div>
+                <div class="main-year" id="main-year"></div>
+                <div class="main-explanation" id="main-explanation"></div>
+            </div>
+        </a>
+
+        <div class="result-label" id="alt-label" style="display:none">MOŽNÉ ALTERNATÍVY</div>
+        <div class="alt-grid" id="alt-grid"></div>
+
+        <button class="try-again-btn" onclick="reset()">↩ Skúsiť znova</button>
+    </div>
+</div>
+
+<script>
+function fillExample(el) {
+    document.getElementById('desc-input').value = el.textContent;
+}
+
+function setLoading(on) {
+    document.getElementById('loading').style.display = on ? 'flex' : 'none';
+    document.getElementById('identify-btn').disabled = on;
+}
+
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function reset() {
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('desc-input').value = '';
+    document.getElementById('desc-input').focus();
+}
+
+function posterImg(url, cls, placeholder) {
+    if (url) return `<img class="${cls}" src="${url}" alt="">`;
+    return `<div class="${placeholder}">🎬</div>`;
+}
+
+async function identify() {
+    const desc = document.getElementById('desc-input').value.trim();
+    if (!desc) return;
+
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'none';
+    setLoading(true);
+
+    try {
+        const res = await fetch('/api/ai-identify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: desc })
+        });
+        const data = await res.json();
+        setLoading(false);
+
+        if (data.error) { showError(data.error); return; }
+
+        const m = data.main;
+        document.getElementById('main-poster-wrap').innerHTML = posterImg(m.poster, 'main-poster', 'main-poster-placeholder');
+        document.getElementById('main-title').textContent = m.title || 'Neznámy film';
+        document.getElementById('main-year').textContent = m.year ? `${m.year}${m.director ? ' · ' + m.director : ''}` : (m.director || '');
+        document.getElementById('main-explanation').textContent = m.explanation || '';
+        document.getElementById('confidence-badge').textContent = m.confidence === 'high' ? '✓ Vysoká zhoda' : '~ Pravdepodobná zhoda';
+
+        const href = m.tmdb_id ? `/movie-redirect/${m.tmdb_id}` : '#';
+        document.getElementById('main-card').href = href;
+
+        const altGrid = document.getElementById('alt-grid');
+        altGrid.innerHTML = '';
+        if (data.alternatives && data.alternatives.length) {
+            document.getElementById('alt-label').style.display = 'block';
+            data.alternatives.forEach(a => {
+                const link = a.tmdb_id ? `/movie-redirect/${a.tmdb_id}` : '#';
+                altGrid.innerHTML += `<a class="alt-card" href="${link}">
+                    ${posterImg(a.poster, 'alt-poster', 'alt-poster-placeholder')}
+                    <div>
+                        <div class="alt-title">${a.title}${a.year ? ' <span style="color:var(--muted);font-weight:400">('+a.year+')</span>' : ''}</div>
+                        <div class="alt-desc">${a.reason || ''}</div>
+                    </div>
+                </a>`;
+            });
+        } else {
+            document.getElementById('alt-label').style.display = 'none';
+        }
+
+        document.getElementById('results').style.display = 'block';
+    } catch(e) {
+        setLoading(false);
+        showError('Niečo sa pokazilo. Skús znova.');
+    }
+}
+
+document.getElementById('desc-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) identify();
+});
+</script>
+</body>
+</html>

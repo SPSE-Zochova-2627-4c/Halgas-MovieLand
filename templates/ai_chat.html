@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Assistant — MovieLand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+        .page-wrap { max-width: 800px; width: 100%; margin: 0 auto; padding: 36px 24px 0; flex: 1; display: flex; flex-direction: column; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-size: 14px; transition: color .2s; }
+        .back-link:hover { color: var(--text); }
+
+        .page-header { margin: 20px 0 24px; }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--text); margin-bottom: 6px; }
+        .page-header p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px; }
+        .tab-btn {
+            flex: 1; padding: 10px; border: none; border-radius: 9px;
+            background: transparent; color: var(--muted); font-size: 14px;
+            font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .15s;
+        }
+        .tab-btn.active { background: linear-gradient(135deg, var(--red), var(--orange)); color: #fff; }
+        .tab-btn:not(.active):hover { color: var(--text); }
+
+        .tab-panel { display: none; flex: 1; flex-direction: column; }
+        .tab-panel.active { display: flex; }
+
+        /* ── CHAT TAB ── */
+        #chat-window {
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 16px; padding-bottom: 24px; min-height: 300px; max-height: 50vh;
+        }
+        .msg { display: flex; gap: 12px; align-items: flex-start; }
+        .msg.user { flex-direction: row-reverse; }
+        .msg-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+            background: var(--card); border: 1px solid var(--border);
+        }
+        .msg.user .msg-avatar { background: linear-gradient(135deg, var(--red), var(--orange)); }
+        .msg-bubble {
+            max-width: 72%; background: var(--card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 12px 16px; font-size: 14px; line-height: 1.6; color: var(--text);
+        }
+        .msg.user .msg-bubble { background: linear-gradient(135deg, rgba(232,51,74,0.18), rgba(242,108,58,0.12)); border-color: rgba(232,51,74,0.3); }
+
+        .rec-card {
+            display: flex; gap: 12px; align-items: flex-start;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+            text-decoration: none; color: var(--text); transition: border-color .2s;
+        }
+        .rec-card:hover { border-color: rgba(232,51,74,0.4); }
+        .rec-poster { width: 40px; height: 60px; border-radius: 6px; object-fit: cover; background: var(--card); flex-shrink: 0; }
+        .rec-poster-placeholder { width: 40px; height: 60px; border-radius: 6px; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .rec-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+        .rec-why { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+        .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+        .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: .2s; }
+        .typing-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+        .input-bar { position: sticky; bottom: 0; background: linear-gradient(to top, var(--bg) 70%, transparent); padding: 20px 0 28px; display: flex; gap: 10px; }
+        .input-bar input { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color .2s; }
+        .input-bar input:focus { border-color: rgba(232,51,74,0.5); }
+        .input-bar input::placeholder { color: var(--muted); }
+        .send-btn { background: linear-gradient(135deg, var(--red), var(--orange)); border: none; border-radius: 12px; padding: 0 20px; color: #fff; font-size: 18px; cursor: pointer; transition: opacity .15s; flex-shrink: 0; }
+        .send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .suggestion-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+        .chip { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+        .chip:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+
+        /* ── IDENTIFY TAB ── */
+        .identify-wrap { padding-bottom: 60px; }
+        .search-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 28px; }
+        .search-box label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 10px; letter-spacing: 0.04em; }
+        .search-box textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); resize: vertical; min-height: 110px; outline: none; transition: border-color .2s; line-height: 1.6; }
+        .search-box textarea:focus { border-color: rgba(232,51,74,0.5); }
+        .search-box textarea::placeholder { color: var(--muted); }
+        .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .example { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .15s; }
+        .example:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+        .identify-btn { margin-top: 16px; background: linear-gradient(135deg, var(--red), var(--orange)); border: none; border-radius: 10px; padding: 13px 28px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; color: #fff; cursor: pointer; transition: opacity .15s; width: 100%; }
+        .identify-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        #identify-results { display: none; }
+        .result-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+        .main-result { background: var(--card); border: 1px solid rgba(232,51,74,0.3); border-radius: 16px; padding: 20px; display: flex; gap: 18px; margin-bottom: 20px; text-decoration: none; color: var(--text); transition: border-color .2s; }
+        .main-result:hover { border-color: var(--red); }
+        .main-poster { width: 72px; height: 108px; border-radius: 8px; object-fit: cover; background: var(--surface); flex-shrink: 0; }
+        .main-poster-placeholder { width: 72px; height: 108px; border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+        .main-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 4px; }
+        .main-year { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+        .main-explanation { font-size: 13px; color: var(--text); line-height: 1.6; }
+        .confidence-badge { display: inline-block; background: rgba(232,51,74,0.15); border: 1px solid rgba(232,51,74,0.35); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--red); font-weight: 600; margin-bottom: 10px; }
+        .alt-grid { display: flex; flex-direction: column; gap: 10px; }
+        .alt-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; text-decoration: none; color: var(--text); transition: border-color .2s; }
+        .alt-card:hover { border-color: rgba(232,51,74,0.35); }
+        .alt-poster { width: 36px; height: 54px; border-radius: 5px; object-fit: cover; background: var(--surface); flex-shrink: 0; }
+        .alt-poster-placeholder { width: 36px; height: 54px; border-radius: 5px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .alt-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .alt-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+        .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0; }
+        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg { background: rgba(232,51,74,0.1); border: 1px solid rgba(232,51,74,0.3); border-radius: 10px; padding: 14px 18px; font-size: 13px; color: var(--text); display: none; }
+        .try-again-btn { background: none; border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 16px; transition: all .15s; }
+        .try-again-btn:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+
+        .msg-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        #err-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #5a1a22; border: 1px solid var(--red); border-radius: 10px; padding: 10px 18px; font-size: 13px; color: var(--text); display: none; z-index: 999; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+    <a href="/" class="back-link">← Back</a>
+
+    <div class="page-header">
+        <h1>AI Assistant</h1>
+        <p>Get personalised film recommendations or identify a film you can't remember.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:0">
+        <div class="tabs" style="flex:1;margin-bottom:0">
+        <button class="tab-btn active" onclick="switchTab('chat')">Film Recommendations</button>
+        <button class="tab-btn" onclick="switchTab('identify')">Identify a Film</button>
+        </div>
+        <button onclick="clearChat()" title="Clear chat history" style="background:none;border:1px solid var(--border);border-radius:9px;padding:8px 14px;color:var(--muted);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Clear chat</button>
+    </div>
+    <div style="margin-bottom:24px"></div>
+
+    <!-- ── CHAT PANEL ── -->
+    <div class="tab-panel active" id="panel-chat">
+        <div class="suggestion-chips" id="chips"></div>
+
+        <div id="chat-window"></div>
+
+        <div class="input-bar">
+            <input id="msg-input" type="text" placeholder="e.g. I want something funny with Tom Hanks..." autocomplete="off">
+            <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <!-- ── IDENTIFY PANEL ── -->
+    <div class="tab-panel" id="panel-identify">
+        <div class="identify-wrap">
+            <div class="search-box">
+                <label>DESCRIBE THE FILM</label>
+                <textarea id="desc-input" placeholder="e.g. a guy relives the same day over and over and falls in love with a reporter..."></textarea>
+                <div class="examples" id="identify-examples"></div>
+                <button class="identify-btn" id="identify-btn" onclick="identify()">Identify Film</button>
+            </div>
+
+            <div class="loading-wrap" id="loading">
+                <div class="spinner"></div>
+                <div style="font-size:14px;color:var(--muted)">Searching...</div>
+            </div>
+
+            <div class="error-msg" id="identify-error"></div>
+
+            <div id="identify-results">
+                <div class="result-label">BEST MATCH</div>
+                <a id="main-card" class="main-result" href="#">
+                    <div id="main-poster-wrap"></div>
+                    <div class="main-info">
+                        <div class="confidence-badge" id="confidence-badge">✓ High confidence</div>
+                        <div class="main-title" id="main-title"></div>
+                        <div class="main-year" id="main-year"></div>
+                        <div class="main-explanation" id="main-explanation"></div>
+                    </div>
+                </a>
+                <div class="result-label" id="alt-label" style="display:none">OTHER POSSIBILITIES</div>
+                <div class="alt-grid" id="alt-grid"></div>
+                <button class="try-again-btn" onclick="resetIdentify()">↩ Try again</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="err-toast"></div>
+
+<script>
+// ── Tab switching ────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (i === 0) === (tab === 'chat')));
+    document.getElementById('panel-chat').classList.toggle('active', tab === 'chat');
+    document.getElementById('panel-identify').classList.toggle('active', tab === 'identify');
+}
+
+// ── CHAT ────────────────────────────────────────
+const chatWindow = document.getElementById('chat-window');
+const input = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+let busy = false;
+
+const USER_AVATAR = {{ avatar | tojson }};
+
+function scrollDown() { chatWindow.scrollTop = chatWindow.scrollHeight; }
+
+function avatarHTML(role) {
+    if (role === 'user' && USER_AVATAR) {
+        return `<div class="msg-avatar"><img src="${USER_AVATAR}" alt="You"></div>`;
+    }
+    const emoji = role === 'user' ? '🎬' : '🤖';
+    return `<div class="msg-avatar">${emoji}</div>`;
+}
+
+function appendMsg(role, html, save = true) {
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `${avatarHTML(role)}<div class="msg-bubble">${html}</div>`;
+    chatWindow.appendChild(div);
+    scrollDown();
+    if (save) saveHistory();
+    return div;
+}
+
+// ── localStorage persistence ──────────────────
+const STORAGE_KEY = 'movieland_chat_v1';
+
+function saveHistory() {
+    try {
+        const msgs = [...chatWindow.querySelectorAll('.msg')].map(m => ({
+            role: m.classList.contains('user') ? 'user' : 'ai',
+            html: m.querySelector('.msg-bubble').innerHTML
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs));
+    } catch(e) {}
+}
+
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return false;
+        const msgs = JSON.parse(saved);
+        if (!msgs.length) return false;
+        msgs.forEach(m => appendMsg(m.role, m.html, false));
+        return true;
+    } catch(e) { return false; }
+}
+
+function showTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg ai'; div.id = 'typing-indicator';
+    div.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    chatWindow.appendChild(div); scrollDown();
+}
+function removeTyping() { const t = document.getElementById('typing-indicator'); if (t) t.remove(); }
+
+function showToast(msg) {
+    const t = document.getElementById('err-toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 4000);
+}
+
+function renderMovieCards(movies) {
+    if (!movies || !movies.length) return '';
+    return movies.map(m => {
+        const poster = m.poster ? `<img class="rec-poster" src="${m.poster}" alt="${m.title}">` : `<div class="rec-poster-placeholder">🎬</div>`;
+        const href = m.tmdb_id ? `/movie-redirect/${m.tmdb_id}` : '#';
+        return `<a class="rec-card" href="${href}">${poster}<div class="rec-info"><div class="rec-title">${m.title}${m.year ? ' <span style="color:var(--muted);font-weight:400">('+m.year+')</span>' : ''}</div><div class="rec-why">${m.reason || ''}</div></div></a>`;
+    }).join('');
+}
+
+function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function sendMessage(text) {
+    const msg = (text || input.value).trim();
+    if (!msg || busy) return;
+    input.value = ''; busy = true; sendBtn.disabled = true;
+    document.getElementById('chips').style.display = 'none';
+    appendMsg('user', esc(msg));
+    showTyping();
+    try {
+        const res = await fetch('/api/ai-chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message: msg}) });
+        const data = await res.json();
+        removeTyping();
+        if (data.error) { showToast(data.error); }
+        else {
+            let html = `<div style="margin-bottom:${data.movies && data.movies.length ? '4px':'0'}">${esc(data.text).replace(/\n/g,'<br>')}</div>`;
+            html += renderMovieCards(data.movies);
+            appendMsg('ai', html);
+        }
+    } catch(e) { removeTyping(); showToast('Connection failed. Please try again.'); }
+    busy = false; sendBtn.disabled = false; input.focus();
+}
+
+function sendChip(el) { sendMessage(el.textContent); }
+input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+const hadHistory = loadHistory();
+if (!hadHistory) {
+    // Fresh session — show welcome message, chips already visible
+    appendMsg('ai', 'Hi! Tell me what you\'re in the mood for — a genre, actor, vibe, or a film you already love. 🎬');
+} else {
+    // Restored session — hide chips since chat is already going
+    document.getElementById('chips').style.display = 'none';
+}
+
+// ── IDENTIFY ────────────────────────────────────
+function fillExample(el) { document.getElementById('desc-input').value = el.textContent; }
+
+function setLoading(on) {
+    document.getElementById('loading').style.display = on ? 'flex' : 'none';
+    document.getElementById('identify-btn').disabled = on;
+}
+
+function posterImg(url, cls, ph) {
+    return url ? `<img class="${cls}" src="${url}" alt="">` : `<div class="${ph}">🎬</div>`;
+}
+
+function resetIdentify() {
+    document.getElementById('identify-results').style.display = 'none';
+    document.getElementById('identify-error').style.display = 'none';
+    // keep the text so user can tweak and search again
+    document.getElementById('desc-input').focus();
+}
+
+async function identify() {
+    const desc = document.getElementById('desc-input').value.trim();
+    if (!desc) return;
+    document.getElementById('identify-results').style.display = 'none';
+    document.getElementById('identify-error').style.display = 'none';
+    setLoading(true);
+    try {
+        const res = await fetch('/api/ai-identify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({description: desc}) });
+        const data = await res.json();
+        setLoading(false);
+        if (data.error) { const e = document.getElementById('identify-error'); e.textContent = data.error; e.style.display = 'block'; return; }
+
+        const m = data.main;
+        document.getElementById('main-poster-wrap').innerHTML = posterImg(m.poster, 'main-poster', 'main-poster-placeholder');
+        document.getElementById('main-title').textContent = m.title || 'Unknown film';
+        document.getElementById('main-year').textContent = m.year ? `${m.year}${m.director ? ' · ' + m.director : ''}` : (m.director || '');
+        document.getElementById('main-explanation').textContent = m.explanation || '';
+        document.getElementById('confidence-badge').textContent = m.confidence === 'high' ? '✓ High confidence' : '~ Probable match';
+        document.getElementById('main-card').href = m.tmdb_id ? `/movie-redirect/${m.tmdb_id}` : '#';
+
+        const altGrid = document.getElementById('alt-grid');
+        altGrid.innerHTML = '';
+        if (data.alternatives && data.alternatives.length) {
+            document.getElementById('alt-label').style.display = 'block';
+            data.alternatives.forEach(a => {
+                const href = a.tmdb_id ? `/movie-redirect/${a.tmdb_id}` : '#';
+                altGrid.innerHTML += `<a class="alt-card" href="${href}">${posterImg(a.poster,'alt-poster','alt-poster-placeholder')}<div><div class="alt-title">${a.title}${a.year?' <span style="color:var(--muted);font-weight:400">('+a.year+')</span>':''}</div><div class="alt-desc">${a.reason||''}</div></div></a>`;
+            });
+        } else { document.getElementById('alt-label').style.display = 'none'; }
+        document.getElementById('identify-results').style.display = 'block';
+    } catch(e) { setLoading(false); const el = document.getElementById('identify-error'); el.textContent = 'Something went wrong. Please try again.'; el.style.display = 'block'; }
+}
+
+document.getElementById('desc-input').addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) identify(); });
+
+// ── Rotating chips & examples ───────────────────
+const ALL_CHAT_CHIPS = [
+    "Something sad like La La Land",
+    "Action film with a great story",
+    "Comedy for a movie night with friends",
+    "Something by Christopher Nolan",
+    "Horror film that's not too scary",
+    "A feel-good film for a Sunday morning",
+    "Thriller that keeps you on the edge",
+    "Something with a twist ending",
+    "Classic 90s film I might have missed",
+    "A great film to watch alone at night",
+    "Something like Inception but different",
+    "Romantic film that's not too cheesy",
+    "Sci-fi film with a deep story",
+    "A short film under 90 minutes",
+    "Something with stunning visuals",
+    "Dark comedy that makes you think",
+    "Adventure film for the whole family",
+    "Based on a true story",
+    "Something from the 2000s I might have missed",
+    "A film with an amazing soundtrack",
+    "Something like The Grand Budapest Hotel",
+    "Crime film like Pulp Fiction",
+    "Something with a great female lead",
+    "A film that will make me cry",
+    "Something funny but also touching",
+    "War film that shows the human side",
+    "Animated film that's not just for kids",
+    "A slow burn psychological thriller",
+    "Something light for a bad day",
+    "A film about friendship",
+];
+
+const ALL_IDENTIFY_EXAMPLES = [
+    "A guy relives the same day over and over and falls in love with a reporter",
+    "A boy survives a wizard attack and goes to a school of magic",
+    "Animated film about a fish searching for his son",
+    "Futuristic film where people live in a simulation",
+    "Kids defend their house from burglars at Christmas",
+    "A woman falls in love with a man who loses his memory every day",
+    "Two old men escape a nursing home to fulfil their bucket list",
+    "A toy cowboy is jealous of a new space toy",
+    "A lion cub runs away after his father is killed by his uncle",
+    "A man builds a boat in his backyard to save animals from a flood",
+    "A scientist accidentally shrinks his kids and they get lost in the garden",
+    "A boxer from Philadelphia gets a chance to fight the world champion",
+    "A woman discovers she can hear men's thoughts",
+    "A group of friends find a treasure map and go on an adventure",
+    "A superhero who can shrink to the size of an ant",
+    "A chef rat controls a human by pulling his hair",
+    "A team of criminals plan a heist in a casino in Las Vegas",
+    "A man wakes up with no memory of the night before and discovers he got married",
+    "Two strangers swap houses at Christmas and both fall in love",
+    "A mermaid gives up her voice to become human and fall in love",
+    "A high school girl pretends to date a popular guy to make another boy jealous",
+    "A man becomes obsessed with a number and starts seeing it everywhere",
+    "Astronaut gets stranded on Mars and has to grow potatoes to survive",
+    "A journalist investigates a series of murders in a Swedish town",
+    "A girl falls down a rabbit hole into a world of strange creatures",
+    "A cleaning lady turns out to be a secret assassin",
+    "A hitman falls in love with the woman he is supposed to kill",
+    "A group of strangers are stuck in a hotel during a snowstorm and one of them is a killer",
+    "Two brothers find out their father is actually a giant",
+    "A woman goes back in time to prevent her husband's death but keeps failing",
+];
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function renderChatChips() {
+    const el = document.getElementById('chips');
+    if (!el) return;
+    const picks = shuffle(ALL_CHAT_CHIPS).slice(0, 5);
+    el.innerHTML = picks.map(p => `<div class="chip" onclick="sendChip(this)">${p}</div>`).join('');
+}
+
+function renderIdentifyExamples() {
+    const el = document.getElementById('identify-examples');
+    if (!el) return;
+    const picks = shuffle(ALL_IDENTIFY_EXAMPLES).slice(0, 4);
+    el.innerHTML = picks.map(p => `<div class="example" onclick="fillExample(this)">${p}</div>`).join('');
+}
+
+// Randomise once on page load — fresh every visit, never changes mid-session
+// Render content first, then loadHistory decides whether to show or hide chips
+renderChatChips();
+renderIdentifyExamples();
+
+// loadHistory returns true if history was restored (chips stay hidden)
+// returns false if no history (chips stay visible for first-time use)
+
+function clearChat() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    chatWindow.innerHTML = '';
+    document.getElementById('chips').style.display = 'flex';
+    appendMsg('ai', 'Hi! Tell me what you\'re in the mood for — a genre, actor, vibe, or a film you already love. 🎬');
+}
+</script>
+</body>
+</html>

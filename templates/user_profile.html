@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ viewed_user.username }} — Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:#E8334A; --orange:#F26C3A; --pink:#F0456A;
+            --grad:linear-gradient(135deg,#E8334A 0%,#F26C3A 55%,#F0456A 100%);
+            --bg:#0f0a0b; --surface:#1a1014; --card:#221519;
+            --border:rgba(240,69,106,0.12); --muted:#9a7f84; --text:#f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0; padding: 40px;
+        }
+        body::after {
+            content: ''; position: fixed; top: -20vh; left: 50%;
+            transform: translateX(-50%); width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.1) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+        .back { color: var(--muted); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; transition: color 0.15s; }
+        .back:hover { color: var(--text); }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; flex-wrap: wrap; gap: 12px; }
+        .username {
+            font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 900;
+            background: var(--grad); -webkit-background-clip: text; background-clip: text;
+            color: transparent; letter-spacing: -1px;
+        }
+        .header-btns { display: flex; gap: 8px; align-items: center; }
+        .btn {
+            color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500;
+            padding: 7px 14px; border-radius: 8px; background: var(--card);
+            border: 1px solid var(--border); display: inline-block; cursor: pointer;
+            transition: border-color 0.15s, background 0.15s; font-family: 'DM Sans', sans-serif;
+        }
+        .btn:hover { border-color: rgba(232,51,74,0.4); background: var(--surface); color: var(--text); }
+        .btn-primary { background: var(--grad); border-color: transparent; color: #fff; }
+        .btn-primary:hover { opacity: 0.88; background: var(--grad); border-color: transparent; }
+        .btn-muted { color: var(--muted); }
+        .section-label {
+            margin-top: 36px; margin-bottom: 16px; font-size: 11px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
+        }
+        /* top4 */
+        .top4-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .top4-card { border-radius: 10px; overflow: hidden; height: 280px; position: relative; }
+        .top4-poster { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; transition: transform 0.2s; }
+        .top4-card:hover .top4-poster { transform: scale(1.03); }
+        .top4-empty {
+            height: 100%; display: flex; align-items: center; justify-content: center;
+            background: var(--card); border-radius: 10px; border: 1.5px dashed var(--border);
+        }
+        .movie-title { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* recent grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .card { background: transparent; border-radius: 10px; overflow: hidden; height: 300px; display: block; }
+        .poster { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover .poster { transform: scale(1.03); box-shadow: 0 16px 40px rgba(0,0,0,0.7); }
+        .item { display: flex; flex-direction: column; }
+        .poster-stars { height: 32px; display: flex; align-items: center; justify-content: center; margin-top: 8px; }
+        .stars { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 16px; }
+        .empty { color: var(--muted); font-size: 15px; padding: 30px 0; }
+        .flash { margin: 16px 0; }
+        .flash-item { background: rgba(232,51,74,0.08); border-left: 3px solid var(--red); padding: 10px 12px; border-radius: 8px; color: var(--text); font-weight: 500; font-size: 14px; }
+        @media (max-width: 600px) { .top4-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/" class="back">← Home</a>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash">{% for m in messages %}<div class="flash-item">{{ m }}</div>{% endfor %}</div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="header" style="align-items:flex-start;">
+        <div style="display:flex; align-items:center; gap:18px; flex:1; min-width:0;">
+            <div style="width:90px; height:90px; border-radius:50%; flex-shrink:0;
+                        overflow:hidden; background:var(--card);
+                        border: 2px solid var(--border);
+                        display:flex; align-items:center; justify-content:center;">
+                {% if viewed_user.avatar_path %}
+                <img src="/static/{{ viewed_user.avatar_path }}"
+                     style="width:100%;height:100%;object-fit:cover;display:block;">
+                {% else %}
+                <span style="font-size:34px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                    {{ viewed_user.username[0].upper() }}
+                </span>
+                {% endif %}
+            </div>
+            <div>
+                <div class="username">{{ viewed_user.username }}</div>
+                {% if viewed_user.bio %}
+                <div style="font-size:13px; color:var(--muted); margin-top:4px; line-height:1.5; max-width:420px;">
+                    <div id="bio-text" style="overflow:hidden; max-height:3em; word-break:break-all; overflow-wrap:anywhere; white-space:pre-wrap;">{{ viewed_user.bio }}</div>
+                    <button id="bio-toggle" onclick="toggleBio()" style="display:none; background:none; border:none; color:var(--red); font-size:12px; font-family:'DM Sans',sans-serif; cursor:pointer; padding:0; margin-top:2px; font-weight:600;"></button>
+                </div>
+                <script>
+                    (function(){
+                        var el = document.getElementById('bio-text');
+                        var btn = document.getElementById('bio-toggle');
+                        if (el.scrollHeight > el.clientHeight + 2) {
+                            btn.style.display = 'block';
+                            btn.textContent = 'See more';
+                        }
+                        window.toggleBio = function() {
+                            var expanded = btn.textContent === 'See less';
+                            if (expanded) {
+                                el.style.maxHeight = '3em';
+                                el.style.overflow = 'hidden';
+                                btn.textContent = 'See more';
+                            } else {
+                                el.style.maxHeight = 'none';
+                                el.style.overflow = 'visible';
+                                btn.textContent = 'See less';
+                            }
+                        };
+                    })();
+                </script>
+                {% endif %}
+            </div>
+        </div>
+        <div class="header-btns">
+            <a class="btn" href="/user/{{ viewed_user.username }}/diary">Full Diary</a>
+            {% if is_self %}
+                <a class="btn" href="/profile">Edit Profile</a>
+            {% elif current_user %}
+                {% if friendship_status == 'accepted' %}
+                    <span class="btn btn-muted" id="friend-status-btn" data-uid="{{ viewed_user.id }}">Friends ✓</span>
+                {% elif friendship_status == 'pending_sent' %}
+                    <span class="btn btn-muted">Request sent</span>
+                {% elif friendship_status == 'pending_received' %}
+                    <button class="btn btn-primary" id="accept-btn" data-uid="{{ viewed_user.id }}">Accept request</button>
+                {% else %}
+                    <button class="btn btn-primary" id="add-friend-btn" data-uid="{{ viewed_user.id }}">Add friend</button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section-label">Top 4</div>
+    <div class="top4-grid">
+        {% for slot in range(1,5) %}
+        <div>
+            <div class="top4-card">
+                {% if top4 and top4.get(slot) %}
+                    <a href="/movie/{{ top4.get(slot).movie_id }}">
+                        <img class="top4-poster" src="{{ top4.get(slot).poster }}" alt="{{ top4.get(slot).title }}">
+                    </a>
+                {% else %}
+                    <div class="top4-empty"><span style="color:var(--muted);font-size:13px;">Empty</span></div>
+                {% endif %}
+            </div>
+            <div class="movie-title">{{ top4.get(slot).title if top4 and top4.get(slot) else '' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="section-label">Recent Movies</div>
+    {% if movies %}
+    <div class="grid">
+        {% for m in movies %}
+        <div class="item">
+            <div class="card">
+                <a href="/movie/{{ m.movie_id }}">
+                    <img class="poster" src="{{ m.poster }}" alt="{{ m.title }}">
+                </a>
+            </div>
+            <div class="poster-stars">
+                <span class="stars">{% for i in range(m.rating or 0) %}★{% endfor %}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No movies logged yet.</div>
+    {% endif %}
+
+</div>
+
+<script>
+    const addBtn = document.getElementById('add-friend-btn');
+    if (addBtn) {
+        addBtn.onclick = async () => {
+            const uid = addBtn.dataset.uid;
+            const res = await fetch(`/friends/request/${uid}`, {method:'POST'});
+            const data = await res.json();
+            if (data.ok) {
+                addBtn.textContent = 'Request sent';
+                addBtn.classList.remove('btn-primary');
+                addBtn.disabled = true;
+            }
+        };
+    }
+    const acceptBtn = document.getElementById('accept-btn');
+    if (acceptBtn) {
+        acceptBtn.onclick = async () => {
+            const uid = acceptBtn.dataset.uid;
+            await fetch(`/friends/accept/${uid}`, {method:'POST'});
+            window.location.reload();
+        };
+    }
+</script>
+</body>
+</html>

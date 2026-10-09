@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ ul.name }} – {{ user.username }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh; left: 50%;
+            transform: translateX(-50%);
+            width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.1) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+        .back-link {
+            display: inline-block;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .back-link:hover { border-color: rgba(232,51,74,0.4); color: var(--text); }
+
+        .list-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .list-title-area { flex: 1; min-width: 0; }
+        .list-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px; font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+            margin: 0 0 6px;
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .ranked-badge {
+            background: linear-gradient(135deg, rgba(232,51,74,0.2), rgba(242,108,58,0.2));
+            border: 1px solid rgba(232,51,74,0.3);
+            color: var(--orange);
+            font-size: 10px; font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'DM Sans', sans-serif;
+            flex-shrink: 0;
+        }
+        .list-desc { color: var(--muted); font-size: 14px; margin: 0; }
+        .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-icon {
+            background: var(--card); border: 1px solid var(--border);
+            color: var(--muted); border-radius: 8px; padding: 8px 12px;
+            font-size: 13px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .btn-icon:hover { color: var(--text); border-color: rgba(232,51,74,0.4); }
+        .btn-delete:hover { color: var(--red); border-color: rgba(232,51,74,0.5); }
+
+        .add-movie-bar {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 28px;
+        }
+        .search-row {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .search-input {
+            flex: 1;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px;
+            color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+            outline: none; transition: border-color 0.15s;
+        }
+        .search-input:focus { border-color: rgba(232,51,74,0.5); }
+        .search-input::placeholder { color: var(--muted); }
+        .search-btn {
+            background: var(--grad); color: #fff; border: none;
+            padding: 10px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: opacity 0.15s; white-space: nowrap;
+        }
+        .search-btn:hover { opacity: 0.85; }
+
+        .search-results {
+            margin-top: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .search-results.has-results { display: flex; }
+        .search-result-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
+        }
+        .search-result-item:hover { border-color: rgba(232,51,74,0.3); }
+        .result-poster {
+            width: 34px; height: 50px;
+            object-fit: cover; border-radius: 4px;
+            background: var(--card); flex-shrink: 0;
+        }
+        .result-poster-empty {
+            width: 34px; height: 50px;
+            border-radius: 4px; background: var(--card);
+            flex-shrink: 0; border: 1px dashed var(--border);
+        }
+        .result-info { flex: 1; min-width: 0; }
+        .result-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .result-year { font-size: 12px; color: var(--muted); }
+        .add-btn {
+            background: var(--grad); color: #fff; border: none;
+            padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;
+        }
+        .add-btn:hover { opacity: 0.85; }
+        .add-btn:disabled { opacity: 0.4; cursor: default; }
+        .already-btn {
+            background: var(--card); color: var(--muted); border: 1px solid var(--border);
+            padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            cursor: default; flex-shrink: 0;
+        }
+
+        /* Movie entries */
+        .section-label {
+            font-size: 11px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 2px; font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .movies-list { display: flex; flex-direction: column; gap: 10px; }
+        .movie-entry {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            transition: border-color 0.15s;
+        }
+        .movie-entry:hover { border-color: rgba(232,51,74,0.25); }
+        .rank-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            min-width: 32px; text-align: center; flex-shrink: 0;
+        }
+        .entry-poster {
+            width: 46px; height: 68px;
+            object-fit: cover; border-radius: 6px;
+            background: var(--surface); flex-shrink: 0;
+        }
+        .entry-poster-empty {
+            width: 46px; height: 68px;
+            border-radius: 6px; background: var(--surface);
+            border: 1px dashed var(--border); flex-shrink: 0;
+        }
+        .entry-title {
+            flex: 1; font-size: 15px; font-weight: 600;
+            text-decoration: none; color: var(--text);
+            transition: color 0.15s;
+        }
+        .entry-title:hover { color: var(--orange); }
+        .remove-btn {
+            background: transparent; border: none;
+            color: var(--muted); font-size: 18px; cursor: pointer;
+            padding: 4px 8px; border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+            flex-shrink: 0;
+        }
+        .remove-btn:hover { color: var(--red); background: rgba(232,51,74,0.08); }
+        .drag-handle {
+            color: var(--muted); cursor: grab; font-size: 16px; padding: 4px 6px;
+            flex-shrink: 0; user-select: none;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        .empty {
+            color: var(--muted); font-size: 14px; padding: 40px 0;
+            text-align: center;
+            border: 1px dashed var(--border); border-radius: 12px;
+        }
+        .count-label { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+        /* Edit modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,10,11,0.85); z-index: 100;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            width: 100%; max-width: 420px;
+        }
+        .modal h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; margin: 0 0 20px;
+            background: var(--grad); -webkit-background-clip: text;
+            background-clip: text; color: transparent;
+        }
+        .modal label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+        .modal input[type=text], .modal textarea {
+            width: 100%; background: var(--card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 12px; color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            outline: none; transition: border-color 0.15s; resize: none;
+        }
+        .modal input[type=text]:focus, .modal textarea:focus { border-color: rgba(232,51,74,0.5); }
+        .modal-field { margin-bottom: 16px; }
+        .toggle-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .toggle-label { font-size: 14px; color: var(--text); flex: 1; }
+        .toggle-sub { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+        .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-track {
+            position: absolute; inset: 0;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; cursor: pointer; transition: background 0.2s;
+        }
+        .toggle input:checked + .toggle-track { background: var(--grad); border-color: transparent; }
+        .toggle-thumb {
+            position: absolute; top: 3px; left: 3px;
+            width: 16px; height: 16px;
+            background: #fff; border-radius: 50%;
+            transition: left 0.2s; pointer-events: none;
+        }
+        .toggle input:checked ~ .toggle-thumb { left: 23px; }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-primary {
+            background: var(--grad); color: #fff; border: none;
+            padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-cancel {
+            background: var(--card); color: var(--muted); border: 1px solid var(--border);
+            padding: 9px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: color 0.15s;
+        }
+        .btn-cancel:hover { color: var(--text); }
+
+        /* Drag-over highlight */
+        .movie-entry.drag-over { border-color: var(--red); opacity: 0.7; }
+        .movie-entry.dragging { opacity: 0.4; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a class="back-link" href="/lists">← Lists</a>
+
+    <div class="list-header">
+        <div class="list-title-area">
+            <div class="list-title">
+                <span id="listTitleText">{{ ul.name }}</span>
+                {% if ul.ranked %}<span class="ranked-badge" id="rankedBadge">Ranked</span>{% endif %}
+            </div>
+            {% if ul.description %}
+            <p class="list-desc" id="listDescText">{{ ul.description }}</p>
+            {% else %}
+            <p class="list-desc" id="listDescText" style="display:none"></p>
+            {% endif %}
+        </div>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="openEditModal()">✎ Edit</button>
+            <button class="btn-icon btn-delete" onclick="deleteList()">Delete</button>
+        </div>
+    </div>
+
+    <!-- Search bar -->
+    <div class="add-movie-bar">
+        <div class="search-row">
+            <input type="text" class="search-input" id="movieSearch" placeholder="Search for a movie to add…">
+            <button class="search-btn" onclick="searchMovies()">Search</button>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <!-- Movie entries -->
+    <div class="section-label">Films</div>
+    <div class="count-label" id="countLabel">
+        {{ ul.entries|length }} film{% if ul.entries|length != 1 %}s{% endif %}
+    </div>
+    <div class="movies-list" id="moviesList">
+        {% if ul.entries %}
+        {% for entry in ul.entries %}
+        <div class="movie-entry" id="entry-{{ entry.id }}" data-id="{{ entry.id }}" data-movie-id="{{ entry.movie_id }}" draggable="{{ 'true' if ul.ranked else 'false' }}">
+            {% if ul.ranked %}
+            <span class="drag-handle" title="Drag to reorder">⠿</span>
+            <span class="rank-num">{{ loop.index }}</span>
+            {% endif %}
+            {% if entry.poster %}
+            <img class="entry-poster" src="{{ entry.poster }}" alt="{{ entry.title }}">
+            {% else %}
+            <div class="entry-poster-empty"></div>
+            {% endif %}
+            <a class="entry-title" href="/movie/{{ entry.movie_id }}">{{ entry.title }}</a>
+            <button class="remove-btn" onclick="removeEntry({{ entry.id }}, this)" title="Remove">×</button>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty" id="emptyState">No films yet. Use the search above to add some!</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit List Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>Edit List</h2>
+        <div class="modal-field">
+            <label>List Name</label>
+            <input type="text" id="editListName" value="{{ ul.name }}" maxlength="200">
+        </div>
+        <div class="modal-field">
+            <label>Description (optional)</label>
+            <textarea id="editListDesc" rows="2">{{ ul.description or '' }}</textarea>
+        </div>
+        <div class="toggle-row">
+            <div class="toggle-label">
+                Ranked
+                <span class="toggle-sub">Movies will be numbered 1, 2, 3…</span>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="editListRanked" {% if ul.ranked %}checked{% endif %}>
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+            </label>
+        </div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const LIST_ID = {{ ul.id }};
+let isRanked = {{ 'true' if ul.ranked else 'false' }};
+// Track movie ids already in the list for quick duplicate checking
+const inListIds = new Set([{% for e in ul.entries %}{{ e.movie_id }},{% endfor %}]);
+
+// ── Search ──────────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('movieSearch');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchMovies(); });
+
+async function searchMovies() {
+    const q = searchInput.value.trim();
+    if (!q) return;
+    searchResults.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:6px 0">Searching…</div>';
+    searchResults.classList.add('has-results');
+    const resp = await fetch('/search?q=' + encodeURIComponent(q));
+    const data = await resp.json();
+    searchResults.innerHTML = '';
+    if (!data.results || data.results.length === 0) {
+        searchResults.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:6px 0">No results found.</div>';
+        return;
+    }
+    data.results.slice(0, 7).forEach(movie => {
+        const alreadyIn = inListIds.has(movie.id);
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        div.innerHTML = `
+            ${movie.poster
+                ? `<img class="result-poster" src="${movie.poster}" alt="${escHtml(movie.title)}">`
+                : '<div class="result-poster-empty"></div>'}
+            <div class="result-info">
+                <div class="result-title">${escHtml(movie.title)}</div>
+                <div class="result-year">${movie.year || ''}</div>
+            </div>
+            ${alreadyIn
+                ? '<span class="already-btn">Added</span>'
+                : `<button class="add-btn" onclick="addMovie(${movie.id}, this)">+ Add</button>`}
+        `;
+        searchResults.appendChild(div);
+    });
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function addMovie(movieId, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    const resp = await fetch(`/lists/${LIST_ID}/add`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({movie_id: movieId})
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        btn.textContent = '✓';
+        btn.style.background = '#2a8a5a';
+        inListIds.add(movieId);
+        appendEntry(data);
+    } else if (data.error === 'already_in_list') {
+        btn.textContent = 'Added';
+        btn.className = 'already-btn';
+        btn.disabled = false;
+    } else {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+    }
+}
+
+// ── Entries ──────────────────────────────────────────────────────────────────
+function appendEntry(data) {
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) emptyState.remove();
+
+    const list = document.getElementById('moviesList');
+    const idx = list.querySelectorAll('.movie-entry').length + 1;
+
+    const div = document.createElement('div');
+    div.className = 'movie-entry';
+    div.id = `entry-${data.entry_id}`;
+    div.dataset.id = data.entry_id;
+    div.dataset.movieId = data.movie_id;
+    div.draggable = isRanked;
+
+    div.innerHTML = `
+        ${isRanked ? `<span class="drag-handle" title="Drag to reorder">⠿</span><span class="rank-num">${idx}</span>` : ''}
+        ${data.poster
+            ? `<img class="entry-poster" src="${data.poster}" alt="${escHtml(data.title)}">`
+            : '<div class="entry-poster-empty"></div>'}
+        <a class="entry-title" href="/movie/${data.movie_id}">${escHtml(data.title)}</a>
+        <button class="remove-btn" onclick="removeEntry(${data.entry_id}, this)" title="Remove">×</button>
+    `;
+    list.appendChild(div);
+    if (isRanked) setupDrag(div);
+    updateCount();
+}
+
+async function removeEntry(entryId, btn) {
+    const row = document.getElementById(`entry-${entryId}`);
+    const movieId = parseInt(row.dataset.movieId);
+    const resp = await fetch(`/lists/${LIST_ID}/remove/${entryId}`, {method: 'POST'});
+    const data = await resp.json();
+    if (data.ok) {
+        row.remove();
+        inListIds.delete(movieId);
+        reNumberEntries();
+        updateCount();
+        // re-mark search result buttons
+        searchResults.querySelectorAll('.add-btn').forEach(b => {
+            const item = b.closest('.search-result-item');
+            if (item) {
+                const titleEl = item.querySelector('.result-title');
+                // we can't easily map back, so just refresh search if needed
+            }
+        });
+    }
+}
+
+function reNumberEntries() {
+    const list = document.getElementById('moviesList');
+    if (!isRanked) return;
+    list.querySelectorAll('.movie-entry').forEach((el, i) => {
+        const rankEl = el.querySelector('.rank-num');
+        if (rankEl) rankEl.textContent = i + 1;
+    });
+    // show empty state if needed
+    if (list.querySelectorAll('.movie-entry').length === 0) {
+        list.innerHTML = '<div class="empty" id="emptyState">No films yet. Use the search above to add some!</div>';
+    }
+}
+
+function updateCount() {
+    const list = document.getElementById('moviesList');
+    const n = list.querySelectorAll('.movie-entry').length;
+    document.getElementById('countLabel').textContent = `${n} film${n !== 1 ? 's' : ''}`;
+}
+
+// ── Drag & Drop (ranked only) ─────────────────────────────────────────────
+let dragSrc = null;
+
+function setupDrag(el) {
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragover', onDragOver);
+    el.addEventListener('dragleave', onDragLeave);
+    el.addEventListener('drop', onDrop);
+    el.addEventListener('dragend', onDragEnd);
+}
+
+document.querySelectorAll('.movie-entry[draggable="true"]').forEach(setupDrag);
+
+function onDragStart(e) {
+    dragSrc = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (this !== dragSrc) this.classList.add('drag-over');
+}
+function onDragLeave() { this.classList.remove('drag-over'); }
+function onDrop(e) {
+    e.stopPropagation();
+    this.classList.remove('drag-over');
+    if (dragSrc === this) return;
+    const list = document.getElementById('moviesList');
+    const entries = [...list.querySelectorAll('.movie-entry')];
+    const srcIdx = entries.indexOf(dragSrc);
+    const dstIdx = entries.indexOf(this);
+    if (srcIdx < dstIdx) {
+        list.insertBefore(dragSrc, this.nextSibling);
+    } else {
+        list.insertBefore(dragSrc, this);
+    }
+    reNumberEntries();
+    saveOrder();
+}
+function onDragEnd() {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.movie-entry').forEach(el => el.classList.remove('drag-over'));
+}
+
+async function saveOrder() {
+    const list = document.getElementById('moviesList');
+    const order = [...list.querySelectorAll('.movie-entry')].map(el => parseInt(el.dataset.id));
+    await fetch(`/lists/${LIST_ID}/reorder`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({order})
+    });
+}
+
+// ── Edit Modal ────────────────────────────────────────────────────────────
+function openEditModal() {
+    document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+}
+async function saveEdit() {
+    const name = document.getElementById('editListName').value.trim();
+    if (!name) { document.getElementById('editListName').focus(); return; }
+    const ranked = document.getElementById('editListRanked').checked;
+    const description = document.getElementById('editListDesc').value.trim();
+    const resp = await fetch(`/lists/${LIST_ID}/edit`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, ranked, description})
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        document.getElementById('listTitleText').textContent = name;
+        const badge = document.getElementById('rankedBadge');
+        if (ranked && !badge) {
+            const span = document.createElement('span');
+            span.className = 'ranked-badge';
+            span.id = 'rankedBadge';
+            span.textContent = 'Ranked';
+            document.querySelector('.list-title').appendChild(span);
+        } else if (!ranked && badge) {
+            badge.remove();
+        }
+        const descEl = document.getElementById('listDescText');
+        if (description) {
+            descEl.textContent = description;
+            descEl.style.display = '';
+        } else {
+            descEl.style.display = 'none';
+        }
+        // Update drag on entries
+        isRanked = ranked;
+        document.querySelectorAll('.movie-entry').forEach(el => {
+            el.draggable = ranked;
+            // toggle rank numbers and drag handles
+            const handle = el.querySelector('.drag-handle');
+            const rankNum = el.querySelector('.rank-num');
+            if (ranked) {
+                if (!handle) {
+                    const h = document.createElement('span');
+                    h.className = 'drag-handle'; h.title = 'Drag to reorder'; h.textContent = '⠿';
+                    el.prepend(h);
+                }
+                if (!rankNum) {
+                    const r = document.createElement('span');
+                    r.className = 'rank-num';
+                    el.insertBefore(r, el.querySelector('.entry-poster, .entry-poster-empty'));
+                }
+                setupDrag(el);
+            } else {
+                if (handle) handle.remove();
+                if (rankNum) rankNum.remove();
+            }
+        });
+        if (ranked) reNumberEntries();
+        closeEditModal();
+    }
+}
+
+async function deleteList() {
+    if (!confirm('Delete this list? This cannot be undone.')) return;
+    const resp = await fetch(`/lists/${LIST_ID}/delete`, {method: 'POST'});
+    const data = await resp.json();
+    if (data.ok) window.location.href = '/lists';
+}
+
+// close edit modal on backdrop click
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+</body>
+</html>

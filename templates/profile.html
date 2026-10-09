@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Profile - {{ user.username }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 36px;
+        }
+        .username {
+            font-family: 'Playfair Display', serif;
+            font-size: 38px;
+            font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+        .header-btns { display: flex; gap: 8px; align-items: center; }
+        .open-diary, .open-lists, .back-home {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: inline-block;
+            transition: border-color 0.15s;
+        }
+        .open-diary:hover, .open-lists:hover, .back-home:hover { border-color: rgba(232,51,74,0.4); color: var(--text); }
+        .back-home {
+            margin-bottom: 24px;
+            color: var(--muted);
+        }
+        .back-home:hover { color: var(--text); }
+        .section-label {
+            margin-top: 36px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: transparent;
+            border-radius: 10px;
+            padding: 0;
+            text-align: center;
+            display: block;
+            overflow: hidden;
+            height: 300px;
+        }
+        .poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover .poster {
+            transform: scale(1.03);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+        }
+        .item { display: flex; flex-direction: column; }
+        .poster-stars {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .stars {
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 16px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .movie-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 4px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .empty {
+            color: var(--muted);
+            font-size: 15px;
+            padding: 30px 0;
+            text-align: center;
+        }
+        .flash { margin: 16px 0; }
+        .flash-item {
+            background: rgba(232,51,74,0.08);
+            border-left: 3px solid var(--red);
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        /* ── Profile hero ── */
+        .profile-hero {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 40px;
+            padding: 20px 28px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+        }
+        .avatar-wrap { position: relative; flex-shrink: 0; }
+        .avatar-circle {
+            width: 96px; height: 96px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px; cursor: pointer;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+            position: relative;
+        }
+        .avatar-circle:hover { transform: scale(1.06); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .hero-info { flex: 1; min-width: 0; }
+        .username {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px; font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            letter-spacing: -1px; margin-bottom: 6px;
+        }
+        .bio-display {
+            font-size: 13px; color: var(--muted);
+            line-height: 1.5; margin-bottom: 8px;
+        }
+        .bio-display.empty { font-style: italic; font-size: 12px; margin-bottom: 0; }
+        .bio-display.clamped { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .bio-expand-btn {
+            background: none; border: none; padding: 0;
+            font-size: 12px; color: var(--red); cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-weight: 600;
+            display: none;
+        }
+        .bio-expand-btn:hover { text-decoration: underline; }
+
+        .hero-btns {
+            position: absolute; top: 20px; right: 20px;
+            display: flex; gap: 8px;
+        }
+
+        /* ── Avatar upload/crop modal ── */
+        .avatar-modal-inner { width: 460px; max-width: 94%; }
+        .avatar-modal-inner h3 { margin: 0 0 16px; font-size: 17px; }
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: 12px;
+            padding: 32px 20px; text-align: center; cursor: pointer;
+            transition: border-color 0.15s, background 0.15s; margin-bottom: 16px;
+        }
+        .upload-zone:hover { border-color: rgba(232,51,74,0.5); background: rgba(232,51,74,0.03); }
+        .upload-zone .uz-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-zone .uz-text { font-size: 14px; color: var(--muted); }
+        .upload-zone .uz-sub { font-size: 12px; color: var(--muted); margin-top: 4px; opacity: 0.7; }
+        #crop-area { display: none; margin-bottom: 16px; }
+        #crop-area .crop-wrapper {
+            width: 100%; height: 300px;
+            background: #000; border-radius: 10px; overflow: hidden; position: relative;
+        }
+        #crop-img { max-width: 100%; display: block; }
+        .crop-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+        .top4-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        .top4-card {
+            background: transparent;
+            border-radius: 10px;
+            padding: 0;
+            overflow: hidden;
+            height: 280px;
+            position: relative;
+        }
+        .top4-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            transition: transform 0.2s;
+        }
+        .top4-card:hover .top4-poster { transform: scale(1.03); }
+        .top4-card .replace-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 5;
+            border-radius: 6px;
+            border: none;
+            background: rgba(15,10,11,0.7);
+            color: #fff;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 14px;
+            backdrop-filter: blur(4px);
+            transition: background 0.15s;
+        }
+        .top4-card .replace-btn:hover { background: var(--grad); }
+        .top4-empty {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            border-radius: 10px;
+            border: 1.5px dashed var(--border);
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .top4-empty:hover { border-color: rgba(232,51,74,0.4); background: var(--surface); }
+
+        /* modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--card); padding: 24px; border-radius: 14px; color: var(--text); border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,0.7); }
+        .modal-content h3 { margin: 0 0 16px; font-size: 17px; font-weight: 600; }
+        .modal-content input {
+            flex: 1;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+        .modal-content input:focus { border-color: rgba(232,51,74,0.5); }
+        .modal-content button {
+            padding: 9px 14px;
+            border-radius: 8px;
+            background: var(--grad);
+            color: #fff;
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .modal-content button.cancel-btn { background: var(--surface); color: var(--muted); }
+        .modal-content button.cancel-btn:hover { color: var(--text); }
+        .search-result { display: flex; gap: 12px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
+        .search-result img { width: 56px; height: 84px; object-fit: cover; border-radius: 6px; }
+        .search-result .meta { flex: 1; }
+        .search-result .meta div { font-weight: 600; font-size: 14px; }
+        .search-result button { padding: 6px 12px; border-radius: 6px; border: none; background: var(--grad); color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+        /* Friends */
+        .friends-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .friend-chip {
+            display: flex; align-items: center; gap: 7px;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 5px 12px 5px 8px;
+            font-size: 13px; font-weight: 500; color: var(--text);
+            transition: border-color 0.15s;
+        }
+        .friend-chip:hover { border-color: rgba(232,51,74,0.3); }
+        .friend-chip .avatar {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: var(--grad); display: flex; align-items: center;
+            justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .friend-chip .remove-friend {
+            margin-left: 4px; color: var(--muted); cursor: pointer;
+            font-size: 15px; line-height: 1; background: none; border: none; padding: 0; transition: color 0.15s;
+        }
+        .friend-chip .remove-friend:hover { color: var(--red); }
+        .add-friend-btn {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--card); border: 1.5px dashed var(--border);
+            border-radius: 20px; padding: 5px 14px;
+            font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .add-friend-btn:hover { border-color: rgba(232,51,74,0.4); color: var(--text); }
+        .pending-chip {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(232,51,74,0.06); border: 1px solid rgba(232,51,74,0.2);
+            border-radius: 10px; padding: 8px 12px; font-size: 13px;
+        }
+        .pending-chip strong { color: var(--text); font-weight: 600; }
+        .pending-chip button { padding: 4px 10px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        .pending-chip .accept-btn { background: var(--grad); color: #fff; }
+        .pending-chip .decline-btn { background: var(--card); color: var(--muted); margin-left: 4px; }
+        #friend-modal .user-result { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        #friend-modal .user-result .uname { flex: 1; font-weight: 600; font-size: 14px; color: var(--text); }
+        #friend-modal .user-result button { padding: 5px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        #friend-modal .user-result .req-btn { background: var(--grad); color: #fff; }
+        #friend-modal .user-result .sent-btn { background: var(--surface); color: var(--muted); cursor: default; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-home">← Home</a>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash" id="flash-block">
+                    {% for m in messages %}
+                        <div class="flash-item">{{ m }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Profile hero -->
+        <div class="profile-hero">
+            <div class="avatar-wrap">
+                <div class="avatar-circle" id="avatar-circle"
+                     onclick="openAvatarModal()"
+                     title="Change avatar"
+                     style="background: var(--surface); overflow:hidden; padding:0;">
+                    {% if user.avatar_path %}
+                    <img id="avatar-img" src="/static/{{ user.avatar_path }}"
+                         style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
+                    {% else %}
+                    <span id="avatar-initials" style="font-size:32px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                        {{ user.username[0].upper() }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="hero-info">
+                <div class="username">{{ user.username }}</div>
+                <div class="bio-display{% if not user.bio %} empty{% endif %}" id="bio-display" style="{% if not user.bio %}margin-bottom:0;{% endif %}">{{ user.bio if user.bio else 'No bio yet.' }}</div>
+                {% if user.bio %}<button class="bio-expand-btn" id="bio-expand-btn" onclick="toggleBio()">See more</button>{% endif %}
+            </div>
+
+            <div class="hero-btns">
+                <button class="open-diary" onclick="openEditModal()">✎ Edit Profile</button>
+                <a class="open-diary" href="/diary">Diary</a>
+                <a class="open-lists" href="/lists">Lists</a>
+                <a class="open-diary" href="/settings" style="background:none; border:1px solid var(--border); color:var(--muted);">⚙ Settings</a>
+            </div>
+        </div>
+
+        <div class="section-label">Top 4</div>
+
+        <div class="top4-grid">
+            {% for slot in range(1,5) %}
+            <div class="top4-card" data-slot="{{ slot }}">
+                {% if top4 and top4.get(slot) %}
+                    <a href="/movie/{{ top4.get(slot).movie_id }}">
+                        <img class="top4-poster" src="{{ top4.get(slot).poster }}" alt="{{ top4.get(slot).title }}">
+                    </a>
+                    <button class="replace-btn" onclick="openTop4Modal({{ slot }}); event.stopPropagation();" title="Replace">✚</button>
+                    <div class="movie-title">{{ top4.get(slot).title }}</div>
+                {% else %}
+                    <div class="top4-empty" onclick="openTop4Modal({{ slot }})">
+                        <div style="text-align:center; color:var(--muted);">
+                            <div style="font-size:24px; line-height:1;">✚</div>
+                            <div style="font-size:12px; margin-top:6px; font-weight:500;">Add</div>
+                        </div>
+                    </div>
+                    <div class="movie-title"></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="section-label">Recent four movies</div>
+
+        {% set c = movies|length if movies else 0 %}
+        {% if c > 4 %}{% set c = 4 %}{% endif %}
+        {% if movies and movies|length > 0 %}
+        <div class="grid count-{{ c }}">
+            {% for m in movies %}
+            <div class="item">
+                <div class="card">
+                    <a href="/movie/{{ m.movie_id }}">
+                        <img class="poster" src="{{ m.poster }}" alt="{{ m.title }} poster">
+                    </a>
+                </div>
+                <div class="poster-stars">
+                    <span class="stars">{% for i in range(m.rating or 0) %}★{% endfor %}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% for i in range(c,4) %}
+                <div class="item" aria-hidden="true">
+                    <div class="card"></div>
+                    <div class="poster-stars"></div>
+                </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">No recent movies in your diary yet.</div>
+        {% endif %}
+
+    <!-- Top4 search modal -->
+    <div id="top4-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="width:640px; max-width:94%;">
+            <h3 id="top4-modal-title">Add to Top 4</h3>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <input id="top4-search-input" type="text" placeholder="Search movies…">
+                <button id="top4-search-btn">Search</button>
+            </div>
+            <div id="top4-search-results" style="margin-top:12px; max-height:320px; overflow:auto;"></div>
+            <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+                <button class="cancel-btn" onclick="closeTop4Modal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Edit Profile modal ── -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <div id="edit-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="width:480px;max-width:94%;">
+            <h3 style="margin:0 0 20px;font-size:18px;">Edit Profile</h3>
+
+            <!-- Profile picture -->
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted);font-weight:600;margin-bottom:10px;">Profile Picture</div>
+
+            <!-- Current avatar + drop zone side by side -->
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+                <div id="ep-avatar-preview" style="width:72px;height:72px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;">
+                    {% if user.avatar_path %}
+                    <img src="/static/{{ user.avatar_path }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                    {% else %}
+                    <span style="font-size:26px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;">{{ user.username[0].upper() }}</span>
+                    {% endif %}
+                </div>
+                <div id="ep-dropzone"
+                     style="flex:1;border:2px dashed var(--border);border-radius:10px;padding:18px 12px;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;"
+                     onclick="document.getElementById('ep-file-input').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
+                     ondragleave="this.style.borderColor=''"
+                     ondrop="handleDrop(event)">
+                    <div style="font-size:20px;margin-bottom:4px;">📂</div>
+                    <div style="font-size:13px;color:var(--muted);">Drag &amp; drop or <span style="color:var(--red);font-weight:600;">browse</span></div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:3px;opacity:0.7;">PNG, JPG, WEBP</div>
+                </div>
+                <input type="file" id="ep-file-input" accept="image/*" style="display:none;">
+            </div>
+
+            <!-- Cropper (hidden until image chosen) -->
+            <div id="ep-crop-area" style="display:none;margin-bottom:16px;">
+                <div style="width:100%;height:260px;background:#000;border-radius:10px;overflow:hidden;">
+                    <img id="ep-crop-img" src="" style="max-width:100%;display:block;">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="cancel-btn" onclick="resetEpCropper()" style="flex:1;">← Choose different</button>
+                    <button onclick="applyEpCrop()" style="flex:1;">Crop &amp; Save photo</button>
+                </div>
+            </div>
+
+            <!-- Bio -->
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted);font-weight:600;margin-bottom:8px;margin-top:4px;">Bio</div>
+            <textarea id="ep-bio" rows="3" maxlength="300"
+                style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:none;line-height:1.5;box-sizing:border-box;"
+                placeholder="Tell people what you're about…">{{ user.bio or '' }}</textarea>
+            <div style="font-size:11px;color:var(--muted);text-align:right;margin-top:3px;" id="ep-char-count">{{ (user.bio or '')|length }}/300</div>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;" id="ep-action-row">
+                <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+                <button onclick="saveEpBio()">Save bio</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        // ── Edit Profile modal ──────────────────────────────────
+        let epCropper = null;
+
+        function openEditModal() {
+            document.getElementById('edit-modal').style.display = 'flex';
+            document.getElementById('ep-crop-area').style.display = 'none';
+            document.getElementById('ep-dropzone').style.display = '';
+            document.getElementById('ep-action-row').style.display = '';
+        }
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            resetEpCropper();
+        }
+        document.getElementById('edit-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        // file input change
+        document.getElementById('ep-file-input').addEventListener('change', function() {
+            if (this.files[0]) loadEpImage(this.files[0]);
+            this.value = '';
+        });
+
+        // drag & drop
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.style.borderColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) loadEpImage(file);
+        }
+
+        function loadEpImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('ep-crop-img');
+                img.src = e.target.result;
+                document.getElementById('ep-dropzone').style.display = 'none';
+                document.getElementById('ep-action-row').style.display = 'none';
+                document.getElementById('ep-crop-area').style.display = 'block';
+                if (epCropper) epCropper.destroy();
+                epCropper = new Cropper(img, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    cropBoxMovable: false,
+                    cropBoxResizable: false,
+                    toggleDragModeOnDblclick: false,
+                    background: false,
+                    autoCropArea: 0.85,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetEpCropper() {
+            if (epCropper) { epCropper.destroy(); epCropper = null; }
+            document.getElementById('ep-crop-img').src = '';
+            document.getElementById('ep-crop-area').style.display = 'none';
+            document.getElementById('ep-dropzone').style.display = '';
+            document.getElementById('ep-action-row').style.display = '';
+        }
+
+        async function applyEpCrop() {
+            if (!epCropper) return;
+            const canvas = epCropper.getCroppedCanvas({ width: 300, height: 300 });
+            canvas.toBlob(async function(blob) {
+                const fd = new FormData();
+                fd.append('avatar', blob, 'avatar.png');
+                const res = await fetch('/profile/avatar', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) {
+                    // update preview inside modal
+                    const preview = document.getElementById('ep-avatar-preview');
+                    preview.innerHTML = `<img src="${data.url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+                    // update main avatar circle on page
+                    const circle = document.getElementById('avatar-circle');
+                    circle.innerHTML = `<img id="avatar-img" src="${data.url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`;
+                    resetEpCropper();
+                } else {
+                    alert('Upload failed, please try again.');
+                }
+            }, 'image/png');
+        }
+
+        // bio char counter
+        document.getElementById('ep-bio').addEventListener('input', function() {
+            document.getElementById('ep-char-count').textContent = this.value.length + '/300';
+        });
+
+        async function saveEpBio() {
+            const bio = document.getElementById('ep-bio').value.trim();
+            const res = await fetch('/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bio })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const display = document.getElementById('bio-display');
+                display.textContent = bio || 'No bio yet.';
+                display.classList.toggle('empty', !bio);
+                display.style.marginBottom = bio ? '' : '0';
+                // Ensure expand button exists in DOM
+                let btn = document.getElementById('bio-expand-btn');
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.id = 'bio-expand-btn';
+                    btn.className = 'bio-expand-btn';
+                    btn.onclick = toggleBio;
+                    btn.textContent = 'See more';
+                    display.parentNode.insertBefore(btn, display.nextSibling);
+                }
+                bioExpanded = false;
+                initBioClamp();
+                closeEditModal();
+            }
+        }
+
+        // ── Bio clamp ────────────────────────────────────────────
+        function initBioClamp() {
+            const el = document.getElementById('bio-display');
+            const btn = document.getElementById('bio-expand-btn');
+            if (!el) return;
+            el.classList.remove('clamped');
+            if (btn) { btn.style.display = 'none'; btn.textContent = 'See more'; }
+            // only clamp if text overflows 2 lines
+            const fullHeight = el.scrollHeight;
+            el.classList.add('clamped');
+            const clampedHeight = el.scrollHeight;
+            if (fullHeight > clampedHeight + 2) {
+                if (btn) btn.style.display = 'inline';
+            } else {
+                el.classList.remove('clamped');
+            }
+        }
+        let bioExpanded = false;
+        function toggleBio() {
+            const el = document.getElementById('bio-display');
+            const btn = document.getElementById('bio-expand-btn');
+            bioExpanded = !bioExpanded;
+            el.classList.toggle('clamped', !bioExpanded);
+            btn.textContent = bioExpanded ? 'See less' : 'See more';
+        }
+        initBioClamp();
+        let top4ActiveSlot = null;
+
+        function openTop4Modal(slot){
+            top4ActiveSlot = slot;
+            document.getElementById('top4-modal').style.display = 'flex';
+            document.getElementById('top4-modal-title').textContent = 'Add / Replace Top 4 slot #' + slot;
+            document.getElementById('top4-search-input').value = '';
+            document.getElementById('top4-search-results').innerHTML = '';
+            document.getElementById('top4-search-input').focus();
+        }
+        function closeTop4Modal(){
+            document.getElementById('top4-modal').style.display = 'none';
+            top4ActiveSlot = null;
+        }
+        document.getElementById('top4-search-btn').addEventListener('click', function(){
+            const q = document.getElementById('top4-search-input').value.trim();
+            if(!q) return;
+            performTop4Search(q);
+        });
+        document.getElementById('top4-search-input').addEventListener('keydown', function(e){
+            if(e.key === 'Enter') { e.preventDefault(); document.getElementById('top4-search-btn').click(); }
+        });
+        function performTop4Search(q){
+            const resultsEl = document.getElementById('top4-search-results');
+            resultsEl.innerHTML = '<div style="padding:8px;color:var(--muted)">Searching…</div>';
+            fetch('/search?q=' + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(data => {
+                    resultsEl.innerHTML = '';
+                    (data.results || []).slice(0,20).forEach(it => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result';
+                        div.innerHTML = `
+                            <img src="${it.poster || '/static/no-poster.png'}" alt="">
+                            <div class="meta"><div>${it.title} ${it.year ? '('+it.year+')':''}</div></div>
+                            <div><button onclick="selectTop4(${it.id})">Add</button></div>
+                        `;
+                        resultsEl.appendChild(div);
+                    });
+                    if((data.results || []).length === 0) resultsEl.innerHTML = '<div style="padding:8px;color:var(--muted)">No results.</div>';
+                }).catch(() => {
+                    resultsEl.innerHTML = '<div style="padding:8px;color:var(--muted)">Error searching.</div>';
+                });
+        }
+        function selectTop4(movie_id){
+            if(!top4ActiveSlot) return;
+            fetch('/profile/top4/set', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slot: top4ActiveSlot, movie_id: movie_id })
+            }).then(r => r.json())
+            .then(data => {
+                if(data && data.success){
+                    const slotEl = document.querySelector('.top4-card[data-slot="'+data.slot+'"]');
+                    if(slotEl){
+                        slotEl.innerHTML = `<a href="/movie/${data.movie_id}"><img class="top4-poster" src="${data.poster}" alt="${data.title}"></a><button class="replace-btn" onclick="openTop4Modal(${data.slot}); event.stopPropagation();" title="Replace">✚</button>`;
+                    }
+                    closeTop4Modal();
+                } else {
+                    alert('Failed to save Top 4 slot');
+                }
+            }).catch(() => { alert('Failed to save Top 4 slot'); });
+        }
+    </script>
+</div>
+</body>
+</html>
+
+<!-- ===== FRIENDS SECTION (injected) ===== -->
+<!-- ===== FRIENDS SECTION (injected) ===== -->
+<script>
+// Insert Friends section after "Recent four movies" section
+(function() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+
+    // --- PENDING REQUESTS BLOCK ---
+    const pendingBlock = document.createElement('div');
+    pendingBlock.id = 'pending-block';
+    pendingBlock.style.cssText = 'margin-top:28px;';
+    container.appendChild(pendingBlock);
+
+    // --- FRIENDS SECTION ---
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.style.marginTop = '32px';
+    label.textContent = 'Friends';
+    container.appendChild(label);
+
+    const bar = document.createElement('div');
+    bar.className = 'friends-bar';
+    bar.id = 'friends-bar';
+    container.appendChild(bar);
+
+    // Add friend button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-friend-btn';
+    addBtn.innerHTML = '＋ Add friend';
+    addBtn.onclick = openFriendModal;
+    bar.appendChild(addBtn);
+
+    loadFriends();
+    loadPending();
+})();
+
+async function loadFriends() {
+    const bar = document.getElementById('friends-bar');
+    if (!bar) return;
+    // Remove existing chips (keep addBtn)
+    bar.querySelectorAll('.friend-chip').forEach(el => el.remove());
+
+    const res = await fetch('/friends/list');
+    const data = await res.json();
+    const friends = data.friends || [];
+    const addBtn = bar.querySelector('.add-friend-btn');
+    for (const f of friends) {
+        const chip = document.createElement('div');
+        chip.className = 'friend-chip';
+        chip.dataset.uid = f.id;
+        chip.style.cursor = 'pointer';
+        chip.onclick = (e) => { if (!e.target.closest('.remove-friend')) window.location.href = `/user/${f.username}`; };
+        const initials = f.username.slice(0,2).toUpperCase();
+        chip.innerHTML = `<div class="avatar">${initials}</div><span>${f.username}</span>`;
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-friend';
+        removeBtn.title = 'Remove friend';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Remove ${f.username} as friend?`)) return;
+            await fetch(`/friends/remove/${f.id}`, {method:'POST'});
+            loadFriends();
+        };
+        chip.appendChild(removeBtn);
+        bar.insertBefore(chip, addBtn);
+    }
+    if (friends.length === 0) {
+        const empty = document.createElement('span');
+        empty.id = 'no-friends-msg';
+        empty.style.cssText = 'font-size:13px;color:var(--muted);';
+        empty.textContent = 'No friends yet — add one to get recommendations!';
+        bar.insertBefore(empty, addBtn);
+    }
+}
+
+async function loadPending() {
+    const block = document.getElementById('pending-block');
+    if (!block) return;
+    block.innerHTML = '';
+    const res = await fetch('/friends/pending');
+    const data = await res.json();
+    const requests = data.requests || [];
+    if (requests.length === 0) return;
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.style.marginTop = '0';
+    label.textContent = 'Friend Requests';
+    block.appendChild(label);
+    for (const req of requests) {
+        const chip = document.createElement('div');
+        chip.className = 'pending-chip';
+        chip.innerHTML = `<strong>${req.username}</strong> wants to be friends`;
+        const acceptBtn = document.createElement('button');
+        acceptBtn.className = 'accept-btn';
+        acceptBtn.textContent = 'Accept';
+        acceptBtn.onclick = async () => {
+            await fetch(`/friends/accept/${req.id}`, {method:'POST'});
+            window.location.reload();
+        };
+        const declineBtn = document.createElement('button');
+        declineBtn.className = 'decline-btn';
+        declineBtn.textContent = 'Decline';
+        declineBtn.onclick = async () => {
+            await fetch(`/friends/decline/${req.id}`, {method:'POST'});
+            loadPending();
+        };
+        chip.appendChild(acceptBtn);
+        chip.appendChild(declineBtn);
+        block.appendChild(chip);
+    }
+}
+
+// Friend search modal
+function openFriendModal() {
+    let modal = document.getElementById('friend-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'friend-modal';
+        modal.className = 'modal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content" style="width:520px;max-width:94%;">
+                <h3>Add a Friend</h3>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <input id="friend-search-input" type="text" placeholder="Search by username…" autocomplete="off">
+                    <button id="friend-search-btn">Search</button>
+                </div>
+                <div id="friend-search-results" style="margin-top:12px;max-height:280px;overflow:auto;"></div>
+                <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                    <button class="cancel-btn" onclick="document.getElementById('friend-modal').style.display='none'">Close</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        document.getElementById('friend-search-btn').onclick = doFriendSearch;
+        document.getElementById('friend-search-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doFriendSearch();
+        });
+    }
+    modal.style.display = 'flex';
+    document.getElementById('friend-search-input').value = '';
+    document.getElementById('friend-search-results').innerHTML = '';
+    setTimeout(() => document.getElementById('friend-search-input').focus(), 50);
+}
+
+async function doFriendSearch() {
+    const q = document.getElementById('friend-search-input').value.trim();
+    const resultsEl = document.getElementById('friend-search-results');
+    if (!q) return;
+    resultsEl.innerHTML = '<div style="padding:8px;color:var(--muted);">Searching…</div>';
+    const res = await fetch('/friends/search?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    const users = data.users || [];
+    resultsEl.innerHTML = '';
+    if (users.length === 0) {
+        resultsEl.innerHTML = '<div style="padding:8px;color:var(--muted);">No users found.</div>';
+        return;
+    }
+    for (const u of users) {
+        const row = document.createElement('div');
+        row.className = 'user-result';
+        const uname = document.createElement('span');
+        uname.className = 'uname';
+        uname.textContent = u.username;
+        row.appendChild(uname);
+        const btn = document.createElement('button');
+        if (u.status === 'accepted') {
+            btn.textContent = 'Friends ✓';
+            btn.className = 'sent-btn';
+        } else if (u.status === 'pending' && u.direction === 'sent') {
+            btn.textContent = 'Request sent';
+            btn.className = 'sent-btn';
+        } else if (u.status === 'pending' && u.direction === 'received') {
+            btn.textContent = 'Accept request';
+            btn.className = 'req-btn';
+            btn.onclick = async () => {
+                await fetch(`/friends/accept/${u.id}`, {method:'POST'});
+                window.location.reload();
+            };
+        } else {
+            btn.textContent = 'Add';
+            btn.className = 'req-btn';
+            btn.onclick = async () => {
+                const r = await fetch(`/friends/request/${u.id}`, {method:'POST'});
+                btn.textContent = 'Request sent'; btn.className = 'sent-btn';
+                btn.onclick = null;
+            };
+        }
+        row.appendChild(btn);
+        resultsEl.appendChild(row);
+    }
+}
+</script>

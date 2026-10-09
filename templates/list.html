@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh; left: 50%;
+            transform: translateX(-50%);
+            width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.09) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+        .back {
+            color: var(--muted);
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+            font-size: 14px;
+            transition: color 0.15s;
+        }
+        .back:hover { color: var(--text); }
+
+        .top-right {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            z-index: 100;
+        }
+        .top-right a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
+        }
+        .top-right a:hover { border-color: rgba(232,51,74,0.4); }
+
+        .month-group {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .month {
+            margin-bottom: 12px;
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .movie {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 6px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: transparent;
+            transition: background 0.12s;
+            cursor: pointer;
+        }
+        .movie:hover { background: var(--card); }
+
+        .date {
+            width: 36px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+            text-align: left;
+            cursor: pointer;
+        }
+        .left > div {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .poster {
+            width: 44px;
+            height: 66px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .preview {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.45;
+            max-width: 480px;
+            margin-top: 3px;
+        }
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .stars {
+            color: var(--orange);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .rewatch-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px; height: 20px;
+            background: rgba(232,51,74,0.08);
+            border-radius: 5px;
+            border: 1px solid rgba(232,51,74,0.15);
+        }
+        .rewatch-badge svg { display: block; width: 12px; height: 12px; }
+        .rewatch-badge svg path { stroke: var(--orange); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        .history-toggle {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 20px; margin-left: 6px;
+            background: rgba(232,51,74,0.08); border-radius: 5px;
+            border: 1px solid rgba(232,51,74,0.18); cursor: pointer;
+            flex-shrink: 0; transition: background 0.15s, border-color 0.15s;
+            vertical-align: middle;
+        }
+        .history-toggle:hover { background: rgba(232,51,74,0.18); border-color: rgba(232,51,74,0.4); }
+        .history-toggle svg { display: block; width: 10px; height: 10px; transition: transform 0.2s; }
+        .history-toggle svg path { stroke: var(--orange); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .history-toggle.open svg { transform: rotate(180deg); }
+
+        .rewatch-history {
+            display: none;
+            margin: 2px 0 6px 96px;
+            border-left: 2px solid rgba(232,51,74,0.2);
+            padding-left: 12px;
+        }
+        .rewatch-history.open { display: block; }
+        .rewatch-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 5px 0; font-size: 13px; color: var(--muted);
+        }
+        .rewatch-row + .rewatch-row { border-top: 1px solid rgba(240,69,106,0.07); }
+        .rewatch-row .rw-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 16px; background: rgba(232,51,74,0.08);
+            border-radius: 4px; border: 1px solid rgba(232,51,74,0.15); flex-shrink: 0;
+        }
+        .rewatch-row .rw-icon svg { width: 10px; height: 10px; }
+        .rewatch-row .rw-icon svg path { stroke: var(--orange); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .rewatch-row .rw-date { font-weight: 600; color: var(--text); min-width: 90px; }
+        .rewatch-row .rw-stars { color: var(--orange); letter-spacing: 1px; font-size: 12px; }
+        .rewatch-row .rw-no-rating { font-style: italic; font-size: 12px; }
+        .rewatch-row .rw-heart { color: var(--red); font-size: 13px; }
+
+        /* right side actions */
+        .right-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .liked-heart {
+            display: inline-flex;
+            align-items: center;
+            color: var(--red);
+            font-size: 15px;
+        }
+
+        .review-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.15s;
+        }
+        .review-link:hover { color: var(--text); }
+
+        /* three-dot menu */
+        .menu {
+            position: relative;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 6px;
+            color: var(--muted);
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .menu:hover { color: var(--text); background: var(--surface); }
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 28px;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            min-width: 160px;
+            z-index: 1000;
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+        }
+        .dropdown.show { display: block; }
+        .dropdown a {
+            display: block;
+            padding: 10px 14px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.12s, color 0.12s;
+        }
+        .dropdown a:hover { background: var(--surface); color: var(--text); }
+
+        /* modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--card);
+            padding: 28px;
+            border-radius: 14px;
+            text-align: center;
+            min-width: 300px;
+            border: 1px solid var(--border);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+        }
+        .modal-content p { margin: 0 0 20px; font-size: 16px; }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            background: var(--surface);
+            color: var(--muted);
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .modal-buttons button:hover { color: var(--text); border-color: rgba(232,51,74,0.3); }
+        .modal-buttons button#deleteBtn {
+            background: var(--grad);
+            border-color: transparent;
+            color: #fff;
+        }
+        .modal-buttons button#deleteBtn:hover { opacity: 0.9; }
+
+        .movie a { color: var(--muted); text-decoration: none; }
+        .movie a:hover { color: var(--text); }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-right">
+        {% if session.get('user_id') %}
+            <a href="/profile">Profile</a>
+        {% else %}
+            <a href="/login">Login</a>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        <a href="/" class="back">← Back</a>
+
+        <h1>{{ title }}</h1>
+
+        {% for month, month_movies in groups %}
+            <div class="month-group">
+                <div class="month">{{ month }}</div>
+
+                {% for movie in month_movies %}
+                {% set siblings = rewatches_map.get(movie.id, []) if rewatches_map is defined else [] %}
+                <div class="movie">
+
+                    <div class="date">
+                        {{ movie.date.strftime("%d") }}
+                    </div>
+
+                    <div class="left" onclick="window.location='/movie/{{ movie.movie_id }}'">
+                        <img class="poster" src="{{ movie.poster }}">
+
+                        <div>
+                            <div class="title">{{ movie.title }}{% if movie.rewatch %}
+                                <span class="rewatch-badge" title="Rewatch">
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M21 12a9 9 0 1 1-2.6-6.1" />
+                                        <path d="M21 3v6h-6" />
+                                    </svg>
+                                </span>
+                            {% endif %}{% if siblings %}
+                                <span class="history-toggle" title="Show all watches" onclick="toggleHistory(event, 'hist-{{ movie.id }}', this)">
+                                    <svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4"/></svg>
+                                </span>
+                            {% endif %}</div>
+
+                            {% if movie.category == "diary" %}
+                            <div class="rating">
+                                <span class="stars">
+                                    {% for i in range(movie.rating or 0) %}★{% endfor %}
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            {% if movie.review %}
+                            <div class="preview">
+                                {{ movie.review[:120] }}{% if movie.review|length > 120 %}…{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="right-actions">
+
+                        {% if movie.liked %}
+                            <span class="liked-heart" aria-hidden="true">❤️</span>
+                        {% endif %}
+
+                        <a href="/review_view/{{ movie.id }}" class="review-link">Review</a>
+
+                        <div class="menu" onclick="toggleMenu(event, this)">
+                            ⋯
+                            <div class="dropdown">
+                                {% if movie.category == "diary" %}
+                                <a href="/edit_review/{{ movie.id }}">Edit review</a>
+                                {% endif %}
+                                <a href="#" onclick="confirmDelete(event, {{ movie.id }})">Delete</a>
+                                {% if movie.category == "watchlist" %}
+                                <a href="/move/{{ movie.id }}">Move to Diary</a>
+                                {% else %}
+                                <a href="/move/{{ movie.id }}">Move to Watchlist</a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+                {% if siblings %}
+                <div class="rewatch-history" id="hist-{{ movie.id }}">
+                    {% for s in siblings %}
+                    <div class="rewatch-row">
+                        <span class="rw-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.1"/><path d="M21 3v6h-6"/></svg>
+                        </span>
+                        <span class="rw-date">{{ s.date.strftime('%d %b %Y') }}</span>
+                        {% if s.rating %}
+                        <span class="rw-stars">{% for i in range(s.rating) %}★{% endfor %}</span>
+                        {% else %}
+                        <span class="rw-no-rating">no rating</span>
+                        {% endif %}
+                        {% if s.liked %}<span class="rw-heart">♥</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
+        {% if opened %}</div>{% endif %}
+    </div>
+
+    <script>
+        function toggleMenu(event, element) {
+            event.stopPropagation();
+            document.querySelectorAll(".dropdown").forEach(d => {
+                if (d !== element.querySelector(".dropdown")) d.classList.remove("show");
+            });
+            const dropdown = element.querySelector(".dropdown");
+            dropdown.classList.toggle("show");
+        }
+        document.addEventListener("click", () => {
+            document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+        });
+        function toggleHistory(event, histId, btn) {
+            event.stopPropagation();
+            const panel = document.getElementById(histId);
+            const open = panel.classList.toggle('open');
+            btn.classList.toggle('open', open);
+        }
+    </script>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <p>Delete this entry?</p>
+            <div class="modal-buttons">
+                <button onclick="closeModal()">Cancel</button>
+                <button id="deleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let deleteId = null;
+        function confirmDelete(event, id) {
+            event.preventDefault();
+            deleteId = id;
+            document.getElementById("modal").classList.add("show");
+        }
+        function closeModal() {
+            document.getElementById("modal").classList.remove("show");
+            deleteId = null;
+        }
+        document.getElementById("deleteBtn").onclick = function () {
+            if (deleteId) window.location.href = "/delete/" + deleteId;
+        };
+        document.getElementById("modal").addEventListener("click", function (e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+
+</body>
+
+</html>

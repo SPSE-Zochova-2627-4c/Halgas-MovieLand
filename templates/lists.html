@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lists – {{ user.username }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh; left: 50%;
+            transform: translateX(-50%);
+            width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.1) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+        .back-home {
+            display: inline-block;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .back-home:hover { border-color: rgba(232,51,74,0.4); color: var(--text); }
+
+        .header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 34px; font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+        .new-list-btn {
+            background: var(--grad);
+            color: #fff;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .new-list-btn:hover { opacity: 0.85; }
+
+        /* lists grid */
+        .lists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .list-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            text-decoration: none;
+            color: var(--text);
+            display: block;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .list-card:hover { border-color: rgba(232,51,74,0.4); transform: translateY(-2px); }
+        .list-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .list-name { font-size: 16px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ranked-badge {
+            background: linear-gradient(135deg, rgba(232,51,74,0.2), rgba(242,108,58,0.2));
+            border: 1px solid rgba(232,51,74,0.3);
+            color: var(--orange);
+            font-size: 10px; font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .list-desc {
+            font-size: 13px; color: var(--muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 12px;
+        }
+        .list-thumbs {
+            display: flex; gap: 4px;
+        }
+        .list-thumb {
+            width: 42px; height: 63px;
+            object-fit: cover; border-radius: 5px;
+            background: var(--surface);
+        }
+        .list-thumb-empty {
+            width: 42px; height: 63px;
+            border-radius: 5px;
+            background: var(--surface);
+            border: 1px dashed var(--border);
+        }
+        .list-count {
+            margin-top: 10px;
+            font-size: 12px; color: var(--muted);
+        }
+        .empty {
+            color: var(--muted); font-size: 15px;
+            padding: 60px 0; text-align: center;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,10,11,0.85); z-index: 100;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            width: 100%; max-width: 420px;
+            position: relative;
+        }
+        .modal h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; margin: 0 0 20px;
+            background: var(--grad); -webkit-background-clip: text;
+            background-clip: text; color: transparent;
+        }
+        .modal label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+        .modal input[type=text], .modal textarea {
+            width: 100%; background: var(--card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 12px; color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            outline: none; transition: border-color 0.15s; resize: none;
+        }
+        .modal input[type=text]:focus, .modal textarea:focus { border-color: rgba(232,51,74,0.5); }
+        .modal-field { margin-bottom: 16px; }
+        .toggle-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .toggle-label { font-size: 14px; color: var(--text); flex: 1; }
+        .toggle-sub { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+        /* toggle switch */
+        .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-track {
+            position: absolute; inset: 0;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; cursor: pointer; transition: background 0.2s;
+        }
+        .toggle input:checked + .toggle-track { background: var(--grad); border-color: transparent; }
+        .toggle-thumb {
+            position: absolute; top: 3px; left: 3px;
+            width: 16px; height: 16px;
+            background: #fff; border-radius: 50%;
+            transition: left 0.2s; pointer-events: none;
+        }
+        .toggle input:checked ~ .toggle-thumb { left: 23px; }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-primary {
+            background: var(--grad); color: #fff; border: none;
+            padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-cancel {
+            background: var(--card); color: var(--muted); border: 1px solid var(--border);
+            padding: 9px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: color 0.15s;
+        }
+        .btn-cancel:hover { color: var(--text); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a class="back-home" href="/profile">← Profile</a>
+
+    <div class="header">
+        <div class="page-title">Lists</div>
+        <button class="new-list-btn" onclick="openCreateModal()">+ New List</button>
+    </div>
+
+    {% if user_lists %}
+    <div class="lists-grid">
+        {% for ul in user_lists %}
+        <a class="list-card" href="/lists/{{ ul.id }}">
+            <div class="list-card-header">
+                <div class="list-name">{{ ul.name }}</div>
+                {% if ul.ranked %}<span class="ranked-badge">Ranked</span>{% endif %}
+            </div>
+            {% if ul.description %}<div class="list-desc">{{ ul.description }}</div>{% else %}<div class="list-desc" style="opacity:0"> </div>{% endif %}
+            <div class="list-thumbs">
+                {% for entry in ul.entries[:5] %}
+                    {% if entry.poster %}
+                    <img class="list-thumb" src="{{ entry.poster }}" alt="{{ entry.title }}">
+                    {% else %}
+                    <div class="list-thumb-empty"></div>
+                    {% endif %}
+                {% endfor %}
+                {% for _ in range(5 - ul.entries|length) if ul.entries|length < 5 %}
+                <div class="list-thumb-empty"></div>
+                {% endfor %}
+            </div>
+            <div class="list-count">{{ ul.entries|length }} film{% if ul.entries|length != 1 %}s{% endif %}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No lists yet. Create your first one!</div>
+    {% endif %}
+</div>
+
+<!-- Create List Modal -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <h2>New List</h2>
+        <div class="modal-field">
+            <label>List Name</label>
+            <input type="text" id="newListName" placeholder="e.g. Favourites of 2025" maxlength="200">
+        </div>
+        <div class="modal-field">
+            <label>Description (optional)</label>
+            <textarea id="newListDesc" rows="2" placeholder="What's this list about?"></textarea>
+        </div>
+        <div class="toggle-row">
+            <div class="toggle-label">
+                Ranked
+                <span class="toggle-sub">Movies will be numbered 1, 2, 3…</span>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="newListRanked">
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+            </label>
+        </div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+            <button class="btn-primary" onclick="createList()">Create</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('newListName').value = '';
+    document.getElementById('newListDesc').value = '';
+    document.getElementById('newListRanked').checked = false;
+    document.getElementById('createModal').classList.add('open');
+    setTimeout(() => document.getElementById('newListName').focus(), 50);
+}
+function closeCreateModal() {
+    document.getElementById('createModal').classList.remove('open');
+}
+async function createList() {
+    const name = document.getElementById('newListName').value.trim();
+    if (!name) { document.getElementById('newListName').focus(); return; }
+    const ranked = document.getElementById('newListRanked').checked;
+    const description = document.getElementById('newListDesc').value.trim();
+    const resp = await fetch('/lists/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, ranked, description})
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        window.location.href = '/lists/' + data.list_id;
+    }
+}
+document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCreateModal();
+});
+document.getElementById('newListName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') createList();
+});
+</script>
+</body>
+</html>

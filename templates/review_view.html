@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ movie.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            padding: 40px;
+            margin: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh; left: 50%;
+            transform: translateX(-50%);
+            width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.1) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container {
+            max-width: 720px;
+            margin: auto;
+            position: relative;
+            z-index: 1;
+        }
+        .back {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 28px;
+            transition: color 0.15s;
+        }
+        .back:hover { color: var(--text); }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 20px;
+            line-height: 1.15;
+        }
+        .content {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            margin-top: 8px;
+        }
+        img {
+            width: 180px;
+            border-radius: 10px;
+            flex: 0 0 180px;
+            display: block;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+        }
+        .meta-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .stars {
+            font-size: 18px;
+            color: var(--orange);
+            letter-spacing: 1px;
+        }
+        .liked-heart {
+            color: var(--red);
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .review {
+            margin-top: 4px;
+            background: var(--card);
+            padding: 20px 22px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            line-height: 1.75;
+            white-space: pre-wrap;
+            font-size: 15px;
+            color: #d4b8bc;
+        }
+        .no-review {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 15px;
+            font-style: italic;
+        }
+        a { color: var(--text); text-decoration: none; }
+        .top-right {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            z-index: 100;
+        }
+        .top-right a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            transition: border-color 0.15s;
+        }
+        .top-right a:hover { border-color: rgba(232,51,74,0.4); }
+    </style>
+</head>
+<body>
+
+<div class="top-right">
+    {% if session.get('user_id') %}
+        <a href="/profile">Profile</a>
+    {% else %}
+        <a href="/login">Login</a>
+    {% endif %}
+</div>
+
+<div class="container">
+    <a href="/diary" class="back">← Back to Diary</a>
+
+    <h1>{{ movie.title }}</h1>
+
+    <div class="content">
+        {% if movie.poster %}
+            <img src="{{ movie.poster }}" alt="{{ movie.title }} poster">
+        {% endif %}
+
+        <div style="flex:1">
+            <div class="meta-row">
+                {% if movie.rating %}
+                    <div class="stars">{% for i in range(movie.rating) %}★{% endfor %}</div>
+                {% endif %}
+                {% if movie.liked %}
+                    <div class="liked-heart">❤️</div>
+                {% endif %}
+            </div>
+
+            {% if movie.review %}
+            <div class="review">{{ movie.review }}</div>
+            {% else %}
+            <div class="no-review">No written review.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

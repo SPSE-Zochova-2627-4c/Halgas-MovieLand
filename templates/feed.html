@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feed – MovieLand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:    #E8334A;
+            --orange: #F26C3A;
+            --pink:   #F0456A;
+            --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+            --bg:     #0f0a0b;
+            --surface:#1a1014;
+            --card:   #221519;
+            --border: rgba(240,69,106,0.12);
+            --muted:  #9a7f84;
+            --text:   #f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20vh; left: 50%;
+            transform: translateX(-50%);
+            width: 80vw; height: 50vh;
+            background: radial-gradient(ellipse, rgba(232,51,74,0.09) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Nav ── */
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--muted); text-decoration: none;
+            font-size: 14px; margin-bottom: 28px; transition: color .2s;
+        }
+        .back-link:hover { color: var(--text); }
+
+        /* ── Header ── */
+        .page-header {
+            margin-bottom: 32px;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px; font-weight: 900;
+            background: var(--grad);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin: 0 0 4px; letter-spacing: -1px;
+        }
+        .subtitle { font-size: 14px; color: var(--muted); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--muted);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state p { font-size: 16px; margin: 0 0 20px; }
+        .empty-state a {
+            color: var(--red); text-decoration: none; font-weight: 600;
+            border-bottom: 1px solid rgba(232,51,74,0.3);
+        }
+
+        /* ── Day group ── */
+        .day-group { margin-bottom: 36px; }
+        .day-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--muted);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0;
+        }
+
+        /* ── Event card ── */
+        .event {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(240,69,106,0.06);
+            cursor: pointer;
+            transition: background 0.12s;
+            border-radius: 8px;
+        }
+        .event:last-child { border-bottom: none; }
+        .event:hover { background: rgba(240,69,106,0.03); padding-left: 6px; padding-right: 6px; }
+
+        .avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--grad); flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #fff;
+            text-transform: uppercase; text-decoration: none;
+        }
+
+        .poster-thumb {
+            width: 38px; height: 56px; border-radius: 5px;
+            object-fit: cover; flex-shrink: 0;
+            border: 1px solid var(--border);
+            background: var(--card);
+        }
+        .poster-placeholder {
+            width: 38px; height: 56px; border-radius: 5px;
+            background: var(--card); flex-shrink: 0;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: var(--muted);
+        }
+
+        .event-body { flex: 1; min-width: 0; padding-top: 2px; }
+        .event-line {
+            font-size: 14px; line-height: 1.45;
+            margin-bottom: 4px;
+        }
+        .event-line .friend-name {
+            font-weight: 700; color: var(--text);
+            text-decoration: none;
+        }
+        .event-line .friend-name:hover { color: var(--orange); }
+        .event-line .movie-title {
+            font-weight: 600; color: var(--text);
+        }
+        .event-line .action { color: var(--muted); }
+
+        .event-meta {
+            display: flex; align-items: center; gap: 8px;
+            flex-wrap: wrap;
+        }
+        .stars { color: var(--orange); font-size: 12px; letter-spacing: 1px; }
+        .liked-heart { color: var(--red); font-size: 13px; }
+        .rewatch-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 18px;
+            background: rgba(232,51,74,0.08); border-radius: 4px;
+            border: 1px solid rgba(232,51,74,0.15);
+        }
+        .rewatch-badge svg { width: 10px; height: 10px; display: block; }
+        .rewatch-badge svg path { stroke: var(--orange); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .event-time { font-size: 12px; color: var(--muted); }
+
+        .snippet {
+            margin-top: 6px;
+            font-size: 13px; color: var(--muted);
+            font-style: italic; line-height: 1.5;
+            border-left: 2px solid rgba(232,51,74,0.2);
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/" class="back-link">← Back</a>
+    <div class="page-header">
+        <h1>Activity Feed</h1>
+        <div class="subtitle">What your friends have been watching</div>
+    </div>
+
+    {% if not events %}
+    <div class="empty-state">
+        <div class="icon">🎬</div>
+        <p>Nothing here yet. Add friends on your <a href="/profile">profile</a> to see what they're watching.</p>
+    </div>
+    {% else %}
+
+    {% set ns = namespace(current_day='') %}
+    {% for ev in events %}
+        {% set day = ev.entry.date.strftime('%A, %d %B %Y') %}
+        {% if day != ns.current_day %}
+            {% if ns.current_day != '' %}</div>{% endif %}
+            <div class="day-group">
+            <div class="day-label">{{ day }}</div>
+            {% set ns.current_day = day %}
+        {% endif %}
+
+        <div class="event" onclick="window.location.href='/movie/{{ ev.entry.movie_id }}'">
+            <a href="/user/{{ ev.user.username }}/diary"
+               style="width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
+                      display:flex;align-items:center;justify-content:center;
+                      background:var(--card);border:1px solid var(--border);text-decoration:none;"
+               onclick="event.stopPropagation()">
+                {% if ev.user.avatar_path %}
+                <img src="/static/{{ ev.user.avatar_path }}"
+                     style="width:100%;height:100%;object-fit:cover;display:block;">
+                {% else %}
+                <span style="font-size:14px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;">
+                    {{ ev.user.username[0].upper() }}
+                </span>
+                {% endif %}
+            </a>
+
+            {% if ev.poster %}
+            <img class="poster-thumb" src="{{ ev.poster }}" alt="{{ ev.entry.title }}">
+            {% else %}
+            <div class="poster-placeholder">🎞</div>
+            {% endif %}
+
+            <div class="event-body">
+                <div class="event-line">
+                    <a class="friend-name" href="/user/{{ ev.user.username }}/diary" onclick="event.stopPropagation()">{{ ev.user.username }}</a>
+                    <span class="action">{% if ev.entry.rewatch %} rewatched{% else %} watched{% endif %}</span>
+                    <span class="movie-title"> {{ ev.entry.title }}</span>
+                </div>
+
+                <div class="event-meta">
+                    {% if ev.entry.rating %}
+                    <span class="stars">{% for i in range(ev.entry.rating) %}★{% endfor %}</span>
+                    {% endif %}
+                    {% if ev.entry.liked %}
+                    <span class="liked-heart">♥</span>
+                    {% endif %}
+                    {% if ev.entry.rewatch %}
+                    <span class="rewatch-badge" title="Rewatch">
+                        <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.1"/><path d="M21 3v6h-6"/></svg>
+                    </span>
+                    {% endif %}
+                    <span class="event-time">{{ ev.entry.date.strftime('%H:%M') }}</span>
+                </div>
+
+                {% if ev.entry.review %}
+                <div class="snippet">{{ ev.entry.review[:160] }}{% if ev.entry.review|length > 160 %}…{% endif %}</div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% endfor %}
+    {% if ns.current_day != '' %}</div>{% endif %}
+
+    {% endif %}
+</div>
+
+</body>
+</html>

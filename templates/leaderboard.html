@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaderboard — Movieland</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red:    #E8334A;
+      --orange: #F26C3A;
+      --pink:   #F0456A;
+      --grad:   linear-gradient(135deg, #E8334A 0%, #F26C3A 55%, #F0456A 100%);
+      --bg:     #0f0a0b;
+      --surface:#1a1014;
+      --card:   #221519;
+      --border: rgba(240,69,106,0.12);
+      --muted:  #9a7f84;
+      --text:   #f5e8ea;
+      --gold:   #f5c842;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 32px;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      font-size: clamp(36px, 8vw, 72px);
+      background: var(--grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 0 0 8px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      margin: 0 0 48px;
+    }
+
+    /* Tab nav */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      background: var(--surface);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--card); }
+    .tab-btn.active {
+      background: var(--grad);
+      color: #fff;
+    }
+
+    /* Leaderboard panel */
+    .board-panel { display: none; }
+    .board-panel.visible { display: block; }
+
+    /* Podium for top 3 */
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .podium-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .podium-slot .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--border);
+    }
+    .podium-slot .avatar-placeholder {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 3px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .podium-slot.rank-1 .avatar,
+    .podium-slot.rank-1 .avatar-placeholder { border-color: var(--gold); width: 64px; height: 64px; font-size: 26px; }
+    .podium-slot.rank-2 .avatar,
+    .podium-slot.rank-2 .avatar-placeholder { border-color: var(--silver); }
+    .podium-slot.rank-3 .avatar,
+    .podium-slot.rank-3 .avatar-placeholder { border-color: var(--bronze); }
+    .podium-block {
+      border-radius: 10px 10px 0 0;
+      width: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 10px 6px;
+      font-weight: 700;
+      font-size: 22px;
+    }
+    .podium-slot.rank-1 .podium-block { height: 100px; background: rgba(245,200,66,0.18); border: 1px solid rgba(245,200,66,0.35); color: var(--gold); }
+    .podium-slot.rank-2 .podium-block { height: 72px; background: rgba(192,192,192,0.12); border: 1px solid rgba(192,192,192,0.25); color: var(--silver); }
+    .podium-slot.rank-3 .podium-block { height: 52px; background: rgba(205,127,50,0.12); border: 1px solid rgba(205,127,50,0.25); color: var(--bronze); }
+    .podium-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .podium-time {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .you-badge {
+      font-size: 9px;
+      background: var(--grad);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 20px;
+      margin-left: 4px;
+    }
+
+    /* Rows for rank 4+ */
+    .board-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .board-row-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .board-row-link:hover .board-row { border-color: rgba(240,69,106,0.35); }
+    .podium-profile-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .podium-profile-link:hover .podium-name { color: var(--red); }
+    .podium-profile-link:hover .avatar,
+    .podium-profile-link:hover .avatar-placeholder { opacity: 0.85; }
+    .board-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      transition: border-color .2s;
+    }
+    .board-row:hover { border-color: rgba(240,69,106,0.35); }
+    .board-row.is-me { border-color: rgba(240,69,106,0.5); background: rgba(240,69,106,0.06); }
+
+    .rank-num {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+      width: 26px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .row-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .row-avatar-placeholder {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .row-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .row-films {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+    .row-bar-wrap {
+      flex: 2;
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .row-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--grad);
+      transition: width .6s ease;
+    }
+    .row-time {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .empty-state .icon { font-size: 42px; margin-bottom: 12px; }
+
+    @media (max-width: 600px) {
+      .row-bar-wrap { display: none; }
+      .podium { gap: 8px; }
+      .podium-block { width: 72px; }
+      .podium-name { max-width: 72px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <a href="/" class="back-link">← Back</a>
+  <h1>Leaderboard</h1>
+  <p class="subtitle">Who's clocked the most screen time?</p>
+
+  <!-- Tab nav -->
+  <nav class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-panel="overall" onclick="switchTab('overall')">🏆 Overall</button>
+    {% for genre in genre_boards.keys() %}
+    <button class="tab-btn" data-panel="{{ genre }}" onclick="switchTab('{{ genre }}')">{{ genre }}</button>
+    {% endfor %}
+  </nav>
+
+  <!-- Overall panel -->
+  <div class="board-panel visible" id="panel-overall">
+    {% if overall %}
+      {% set top3 = overall[:3] %}
+      {% set rest = overall[3:] %}
+
+      {% if top3|length >= 2 %}
+      <!-- Podium: arrange as 2,1,3 -->
+      <div class="podium">
+        {% set podium_order = [1, 0, 2] %}
+        {% set rank_classes = ['rank-2', 'rank-1', 'rank-3'] %}
+        {% for i, cls in [(1,'rank-2'),(0,'rank-1'),(2,'rank-3')] %}
+          {% if top3|length > i %}
+          {% set u = top3[i] %}
+          <div class="podium-slot {{ cls }}">
+            <a href="/user/{{ u.username }}" class="podium-profile-link">
+            {% if u.avatar %}
+              <img class="avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+            {% else %}
+              <div class="avatar-placeholder">{{ u.username[0]|upper }}</div>
+            {% endif %}
+            <span class="podium-name">
+              {{ u.username }}
+              {% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}
+            </span>
+            </a>
+            <span class="podium-time">{{ (u.total_minutes // 60) }}h {{ (u.total_minutes % 60) }}m</span>
+            <div class="podium-block">{{ i + 1 }}</div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if rest %}
+      <div class="board-list">
+        {% set max_mins = overall[0].total_minutes if overall[0].total_minutes > 0 else 1 %}
+        {% for u in rest %}
+        <a href="/user/{{ u.username }}" class="board-row-link">
+        <div class="board-row {% if current_user and u.username == current_user.username %}is-me{% endif %}">
+          <span class="rank-num">{{ loop.index + 3 }}</span>
+          {% if u.avatar %}
+            <img class="row-avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+          {% else %}
+            <div class="row-avatar-placeholder">{{ u.username[0]|upper }}</div>
+          {% endif %}
+          <span class="row-name">
+            {{ u.username }}
+            {% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}
+            <span class="row-films">{{ u.film_count }} film{{ 's' if u.film_count != 1 }}</span>
+          </span>
+          <div class="row-bar-wrap">
+            <div class="row-bar" style="width: {{ [((u.total_minutes / max_mins) * 100)|int, 2]|max }}%"></div>
+          </div>
+          <span class="row-time">{{ (u.total_minutes // 60) }}h {{ (u.total_minutes % 60) }}m</span>
+        </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if overall|length == 1 %}
+      <!-- Only one user — just show as a row -->
+      <div class="board-list">
+        {% for u in overall %}
+        <a href="/user/{{ u.username }}" class="board-row-link">
+        <div class="board-row {% if current_user and u.username == current_user.username %}is-me{% endif %}">
+          <span class="rank-num">1</span>
+          {% if u.avatar %}
+            <img class="row-avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+          {% else %}
+            <div class="row-avatar-placeholder">{{ u.username[0]|upper }}</div>
+          {% endif %}
+          <span class="row-name">{{ u.username }}{% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}</span>
+          <span class="row-time">{{ (u.total_minutes // 60) }}h {{ (u.total_minutes % 60) }}m</span>
+        </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state"><div class="icon">🎬</div>No films logged yet. Start watching!</div>
+    {% endif %}
+  </div>
+
+  <!-- Genre panels -->
+  {% for genre, ranked in genre_boards.items() %}
+  <div class="board-panel" id="panel-{{ genre }}">
+    {% set max_mins = ranked[0]['genre_minutes'][genre] if ranked else 1 %}
+    {% set top3 = ranked[:3] %}
+    {% set rest = ranked[3:] %}
+
+    {% if top3|length >= 2 %}
+    <div class="podium">
+      {% for i, cls in [(1,'rank-2'),(0,'rank-1'),(2,'rank-3')] %}
+        {% if top3|length > i %}
+        {% set u = top3[i] %}
+        <div class="podium-slot {{ cls }}">
+          {% if u.avatar %}
+            <img class="avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+          {% else %}
+            <div class="avatar-placeholder">{{ u.username[0]|upper }}</div>
+          {% endif %}
+          <span class="podium-name">{{ u.username }}{% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}</span>
+          <span class="podium-time">{{ (u['genre_minutes'][genre] // 60) }}h {{ (u['genre_minutes'][genre] % 60) }}m</span>
+          <div class="podium-block">{{ i + 1 }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if top3|length == 1 %}
+    <div class="board-list">
+      {% set u = top3[0] %}
+      <div class="board-row {% if current_user and u.username == current_user.username %}is-me{% endif %}">
+        <span class="rank-num">1</span>
+        {% if u.avatar %}<img class="row-avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+        {% else %}<div class="row-avatar-placeholder">{{ u.username[0]|upper }}</div>{% endif %}
+        <span class="row-name">{{ u.username }}{% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}</span>
+        <span class="row-time">{{ (u['genre_minutes'][genre] // 60) }}h {{ (u['genre_minutes'][genre] % 60) }}m</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if rest %}
+    <div class="board-list">
+      {% for u in rest %}
+      <div class="board-row {% if current_user and u.username == current_user.username %}is-me{% endif %}">
+        <span class="rank-num">{{ loop.index + 3 }}</span>
+        {% if u.avatar %}<img class="row-avatar" src="/static/avatars/{{ u.avatar }}" alt="{{ u.username }}">
+        {% else %}<div class="row-avatar-placeholder">{{ u.username[0]|upper }}</div>{% endif %}
+        <span class="row-name">
+          {{ u.username }}
+          {% if current_user and u.username == current_user.username %}<span class="you-badge">you</span>{% endif %}
+        </span>
+        <div class="row-bar-wrap">
+          <div class="row-bar" style="width: {{ [((u['genre_minutes'][genre] / max_mins) * 100)|int, 2]|max }}%"></div>
+        </div>
+        <span class="row-time">{{ (u['genre_minutes'][genre] // 60) }}h {{ (u['genre_minutes'][genre] % 60) }}m</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.board-panel').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('panel-' + id);
+  if (panel) panel.classList.add('visible');
+  const btn = document.querySelector(`[data-panel="${id}"]`);
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>

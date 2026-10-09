@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings — Movieland</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red:#E8334A; --orange:#F26C3A; --pink:#F0456A;
+            --grad:linear-gradient(135deg,#E8334A 0%,#F26C3A 55%,#F0456A 100%);
+            --bg:#0f0a0b; --surface:#1a1014; --card:#221519;
+            --border:rgba(240,69,106,0.12); --muted:#9a7f84; --text:#f5e8ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; margin: 0; padding: 40px; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .back { color: var(--muted); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 28px; transition: color 0.15s; }
+        .back:hover { color: var(--text); }
+        h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -1px; margin: 0 0 32px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); font-weight: 600; margin-bottom: 16px; }
+        .section h2 { font-size: 17px; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+        .section p { font-size: 13px; color: var(--muted); margin: 0 0 20px; line-height: 1.6; }
+
+        /* drop zone */
+        .dropzone {
+            border: 2px dashed var(--border); border-radius: 12px;
+            padding: 32px 20px; text-align: center; cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            position: relative;
+        }
+        .dropzone:hover, .dropzone.dragover { border-color: var(--red); background: rgba(232,51,74,0.04); }
+        .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
+        .dropzone-text { font-size: 14px; color: var(--muted); }
+        .dropzone-text span { color: var(--red); font-weight: 600; }
+        .dropzone-hint { font-size: 12px; color: var(--muted); margin-top: 6px; opacity: 0.7; }
+        .file-chosen { font-size: 13px; color: var(--text); margin-top: 10px; font-weight: 500; display: none; }
+
+        /* import options */
+        .import-options { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .option-btn {
+            padding: 8px 16px; border-radius: 8px; border: 1.5px solid var(--border);
+            background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 500;
+            cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+        }
+        .option-btn.active { border-color: var(--red); color: var(--text); background: rgba(232,51,74,0.08); }
+
+        /* progress */
+        #import-progress { display: none; margin-top: 16px; }
+        .progress-bar-track { height: 6px; background: var(--surface); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar-fill { height: 100%; background: var(--grad); border-radius: 99px; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 13px; color: var(--muted); }
+
+        /* results */
+        #import-results { display: none; margin-top: 16px; padding: 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; line-height: 1.8; }
+        #import-results.success { border-color: rgba(50,200,100,0.3); }
+        #import-results.error { border-color: rgba(232,51,74,0.4); }
+        .result-row { display: flex; justify-content: space-between; }
+        .result-label { color: var(--muted); }
+        .result-val { color: var(--text); font-weight: 600; }
+
+        /* btn */
+        .btn-primary {
+            background: var(--grad); color: #fff; border: none; padding: 10px 24px;
+            border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+        }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+        /* how-to */
+        .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+        .steps li { counter-increment: step; display: flex; gap: 12px; align-items: flex-start; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 6px 0; }
+        .steps li::before { content: counter(step); background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; font-size: 15px; min-width: 16px; margin-top: 1px; }
+        .steps a { color: var(--red); }
+
+        /* danger button */
+        .btn-danger {
+            background: transparent; color: #E8334A; border: 1.5px solid rgba(232,51,74,0.5);
+            padding: 10px 24px; border-radius: 9px; font-size: 14px; font-weight: 600;
+            cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+        }
+        .btn-danger:hover { background: rgba(232,51,74,0.08); border-color: #E8334A; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/profile" class="back">← Back to profile</a>
+    <h1>Settings</h1>
+
+    <!-- Import section -->
+    <div class="section">
+        <div class="section-title">Data Import</div>
+        <h2>Import from Letterboxd</h2>
+        <p>Upload your Letterboxd data export ZIP and we'll import your watched films and ratings automatically.</p>
+
+        <!-- How to export -->
+        <details style="margin-bottom: 20px;">
+            <summary style="font-size: 13px; color: var(--red); cursor: pointer; font-weight: 600; user-select: none;">How to export from Letterboxd ↓</summary>
+            <ul class="steps" style="margin-top: 12px;">
+                <li>Go to <a href="https://letterboxd.com/settings/data/" target="_blank">letterboxd.com/settings/data</a></li>
+                <li>Click <strong style="color:var(--text)">Export your data</strong> and download the ZIP file</li>
+                <li>Come back here and upload that ZIP file below</li>
+            </ul>
+        </details>
+
+        <!-- What to import -->
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Import</div>
+        <div class="import-options">
+            <button class="option-btn active" id="opt-watched" onclick="toggleOpt('watched')">✓ Watched films</button>
+            <button class="option-btn active" id="opt-ratings" onclick="toggleOpt('ratings')">✓ Ratings</button>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="dropzone" id="dropzone"
+             ondragover="event.preventDefault(); this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="handleDrop(event)">
+            <input type="file" accept=".zip" id="file-input" onchange="fileChosen(this)">
+            <div class="dropzone-icon">📦</div>
+            <div class="dropzone-text">Drop your Letterboxd ZIP here or <span>browse</span></div>
+            <div class="dropzone-hint">letterboxd-[username]-[date]-utc.zip</div>
+            <div class="file-chosen" id="file-chosen-name"></div>
+        </div>
+
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 16px;">
+            <button class="btn-primary" id="import-btn" onclick="startImport()" disabled>Import</button>
+            <span id="import-hint" style="font-size: 12px; color: var(--muted);">Select a file to continue</span>
+        </div>
+
+        <!-- Progress -->
+        <div id="import-progress">
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+            <div class="progress-text" id="progress-text">Preparing…</div>
+        </div>
+
+        <!-- Results -->
+        <div id="import-results">
+            <div class="result-row"><span class="result-label">Movies found in ZIP</span><span class="result-val" id="res-found">—</span></div>
+            <div class="result-row"><span class="result-label">Successfully imported</span><span class="result-val" id="res-imported">—</span></div>
+            <div class="result-row"><span class="result-label">Already in your diary</span><span class="result-val" id="res-skipped">—</span></div>
+            <div class="result-row"><span class="result-label">Not found on TMDB</span><span class="result-val" id="res-notfound">—</span></div>
+            <div id="res-message" style="margin-top: 10px; color: var(--text); font-weight: 500;"></div>
+        </div>
+    </div>
+
+    <!-- Backfill section -->
+    <div class="section" style="margin-top: 0;">
+        <div class="section-title">Leaderboard Data</div>
+        <h2>Fix Missing Runtimes</h2>
+        <p>If films imported before the leaderboard feature are showing 0 minutes, click below to fetch their runtimes from TMDB. This may take a minute depending on how many films you have.</p>
+        <div style="display:flex; align-items:center; gap:16px; margin-top:12px;">
+            <button class="btn-primary" id="backfill-btn" onclick="startBackfill()">Fix missing runtimes</button>
+            <span id="backfill-status" style="font-size:13px; color:var(--muted);"></span>
+        </div>
+    </div>
+
+    <!-- Clean up ratings-only entries -->
+    <div class="section" style="margin-top: 0;">
+        <div class="section-title">Data Cleanup</div>
+        <h2>Remove Ratings-Only Films</h2>
+        <p>If you imported before this was fixed, some films you only <em>rated</em> on Letterboxd (never logged as watched) may have ended up in your diary. Upload your Letterboxd ZIP below to scan and remove them.</p>
+        <div class="dropzone" id="cleanup-dropzone"
+             ondragover="event.preventDefault(); this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="handleCleanupDrop(event)">
+            <input type="file" accept=".zip" id="cleanup-file-input" onchange="cleanupFileChosen(this)">
+            <div class="dropzone-icon">🗂️</div>
+            <div class="dropzone-text">Drop your Letterboxd ZIP here or <span>browse</span></div>
+            <div class="file-chosen" id="cleanup-file-name"></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px; margin-top:12px;">
+            <button class="btn-primary" id="cleanup-btn" onclick="startCleanup()" disabled>Scan &amp; Remove</button>
+            <span id="cleanup-status" style="font-size:13px; color:var(--muted);"></span>
+        </div>
+    </div>
+    <!-- Danger Zone -->
+    <div class="section" style="margin-top: 0; border-color: rgba(232,51,74,0.3);">
+        <div class="section-title" style="color:#E8334A;">Danger Zone</div>
+        <h2>Delete Account</h2>
+        <p>Permanently deletes your account, all diary entries, watchlist, ratings, and profile picture. <strong style="color:var(--text)">This cannot be undone.</strong></p>
+        <button class="btn-danger" onclick="showDeleteConfirm()">Delete my account</button>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="deleteOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--card); border:1px solid rgba(232,51,74,0.35); border-radius:18px; padding:36px 32px; max-width:420px; width:90%; text-align:center;">
+        <div style="font-size:36px; margin-bottom:16px;">&#9888;&#65039;</div>
+        <h2 style="font-family:'Playfair Display',serif; font-size:22px; margin:0 0 10px; color:var(--text);">Delete your account?</h2>
+        <p style="font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 24px;">This will permanently erase your diary, watchlist, ratings, and profile. There is no going back.</p>
+        <p style="font-size:13px; color:var(--muted); margin:0 0 10px;">Type <strong style="color:var(--text)">DELETE</strong> to confirm:</p>
+        <input id="deleteConfirmInput" type="text" placeholder="DELETE"
+               style="width:100%; padding:10px 14px; border-radius:9px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none; text-align:center; margin-bottom:20px;"
+               oninput="checkDeleteInput()">
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="hideDeleteConfirm()" style="padding:10px 22px; border-radius:9px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;">Cancel</button>
+            <button id="confirmDeleteBtn" onclick="doDeleteAccount()" disabled
+                    style="padding:10px 22px; border-radius:9px; border:none; background:#E8334A; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; opacity:0.4; transition:opacity 0.15s;">Delete forever</button>
+        </div>
+        <div id="deleteError" style="margin-top:14px; font-size:13px; color:#E8334A; display:none;"></div>
+    </div>
+</div>
+
+<script>
+    // Cleanup: ratings-only removal
+    let cleanupFile = null;
+    function handleCleanupDrop(e) {
+        e.preventDefault();
+        document.getElementById('cleanup-dropzone').classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.zip')) setCleanupFile(file);
+    }
+    function cleanupFileChosen(input) {
+        if (input.files[0]) setCleanupFile(input.files[0]);
+    }
+    function setCleanupFile(file) {
+        cleanupFile = file;
+        document.getElementById('cleanup-file-name').textContent = '📄 ' + file.name;
+        document.getElementById('cleanup-file-name').style.display = 'block';
+        document.getElementById('cleanup-btn').disabled = false;
+        document.getElementById('cleanup-status').textContent = 'Ready';
+    }
+    async function startCleanup() {
+        if (!cleanupFile) return;
+        const btn = document.getElementById('cleanup-btn');
+        const status = document.getElementById('cleanup-status');
+        btn.disabled = true;
+        status.textContent = 'Scanning…';
+        const fd = new FormData();
+        fd.append('file', cleanupFile);
+        try {
+            const res = await fetch('/settings/cleanup-ratings-only', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) { status.textContent = '❌ ' + data.error; btn.disabled = false; return; }
+            status.textContent = data.removed > 0
+                ? `✅ Removed ${data.removed} film${data.removed !== 1 ? 's' : ''} that were rated but never watched.`
+                : '✅ Nothing to remove — your diary looks clean!';
+        } catch(e) {
+            status.textContent = '❌ Something went wrong.';
+            btn.disabled = false;
+        }
+    }
+
+    async function startBackfill() {
+        const btn = document.getElementById('backfill-btn');
+        const status = document.getElementById('backfill-status');
+        btn.disabled = true;
+        status.textContent = 'Fetching runtimes… this may take a moment';
+        try {
+            const res = await fetch('/settings/backfill-runtime', { method: 'POST' });
+            const data = await res.json();
+            if (data.error) { status.textContent = '❌ ' + data.error; btn.disabled = false; return; }
+            status.textContent = `✅ Updated ${data.updated} film${data.updated !== 1 ? 's' : ''}.${data.failed ? ' ' + data.failed + ' could not be fetched.' : ''}`;
+        } catch(e) {
+            status.textContent = '❌ Something went wrong. Try again.';
+            btn.disabled = false;
+        }
+    }
+    let chosenFile = null;
+    const opts = { watched: true, ratings: true };
+
+    function toggleOpt(key) {
+        opts[key] = !opts[key];
+        document.getElementById('opt-' + key).classList.toggle('active', opts[key]);
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById('dropzone').classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.zip')) setFile(file);
+    }
+
+    function fileChosen(input) {
+        if (input.files[0]) setFile(input.files[0]);
+    }
+
+    function setFile(file) {
+        chosenFile = file;
+        const el = document.getElementById('file-chosen-name');
+        el.textContent = '📄 ' + file.name;
+        el.style.display = 'block';
+        document.getElementById('import-btn').disabled = false;
+        document.getElementById('import-hint').textContent = 'Ready to import';
+        document.getElementById('import-results').style.display = 'none';
+        document.getElementById('import-progress').style.display = 'none';
+    }
+
+    async function startImport() {
+        if (!chosenFile) return;
+        if (!opts.watched && !opts.ratings) {
+            alert('Please select at least one import option.'); return;
+        }
+
+        document.getElementById('import-btn').disabled = true;
+        document.getElementById('import-hint').textContent = '';
+        document.getElementById('import-results').style.display = 'none';
+
+        const progress = document.getElementById('import-progress');
+        const fill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        progress.style.display = 'block';
+        fill.style.width = '5%';
+        progressText.textContent = 'Uploading ZIP…';
+
+        const formData = new FormData();
+        formData.append('file', chosenFile);
+        formData.append('import_watched', opts.watched ? '1' : '0');
+        formData.append('import_ratings', opts.ratings ? '1' : '0');
+
+        // Animate progress while waiting
+        let fakeProgress = 5;
+        const ticker = setInterval(() => {
+            if (fakeProgress < 80) {
+                fakeProgress += Math.random() * 4;
+                fill.style.width = fakeProgress + '%';
+                if (fakeProgress < 30) progressText.textContent = 'Reading ZIP…';
+                else if (fakeProgress < 55) progressText.textContent = 'Searching TMDB…';
+                else progressText.textContent = 'Saving movies…';
+            }
+        }, 400);
+
+        try {
+            const res = await fetch('/settings/import-letterboxd', {
+                method: 'POST',
+                body: formData
+            });
+            clearInterval(ticker);
+            fill.style.width = '100%';
+            progressText.textContent = 'Done!';
+
+            const data = await res.json();
+            setTimeout(() => {
+                progress.style.display = 'none';
+                showResults(data);
+            }, 600);
+        } catch (err) {
+            clearInterval(ticker);
+            progress.style.display = 'none';
+            showResults({ error: 'Upload failed. Please try again.' });
+        } finally {
+            document.getElementById('import-btn').disabled = false;
+        }
+    }
+
+    function showResults(data) {
+        const box = document.getElementById('import-results');
+        box.style.display = 'block';
+        if (data.error) {
+            box.className = 'error';
+            document.getElementById('res-message').textContent = '❌ ' + data.error;
+            return;
+        }
+        box.className = 'success';
+        document.getElementById('res-found').textContent = data.found ?? '—';
+        document.getElementById('res-imported').textContent = data.imported ?? '—';
+        document.getElementById('res-skipped').textContent = data.skipped ?? '—';
+        document.getElementById('res-notfound').textContent = data.not_found ?? '—';
+        const msg = document.getElementById('res-message');
+        if (data.imported > 0) {
+            msg.textContent = `✅ Import complete! ${data.imported} movie${data.imported !== 1 ? 's' : ''} added to your diary.`;
+        } else {
+            msg.textContent = '✅ Import complete — no new movies to add.';
+        }
+        if (data.ratings_only_skipped > 0) {
+            const note = document.createElement('div');
+            note.style.cssText = 'margin-top:8px; font-size:12px; color:var(--muted);';
+            note.textContent = `ℹ️ ${data.ratings_only_skipped} film${data.ratings_only_skipped !== 1 ? 's' : ''} you rated but never logged as watched were skipped.`;
+            msg.after(note);
+        }
+    }
+
+    // ── Delete account ──────────────────────────────────────────
+    function showDeleteConfirm() {
+        const overlay = document.getElementById('deleteOverlay');
+        overlay.style.display = 'flex';
+        document.getElementById('deleteConfirmInput').value = '';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        document.getElementById('confirmDeleteBtn').style.opacity = '0.4';
+        document.getElementById('deleteError').style.display = 'none';
+        setTimeout(() => document.getElementById('deleteConfirmInput').focus(), 50);
+    }
+    function hideDeleteConfirm() {
+        document.getElementById('deleteOverlay').style.display = 'none';
+    }
+    function checkDeleteInput() {
+        const val = document.getElementById('deleteConfirmInput').value;
+        const btn = document.getElementById('confirmDeleteBtn');
+        const ok = val === 'DELETE';
+        btn.disabled = !ok;
+        btn.style.opacity = ok ? '1' : '0.4';
+        btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+    }
+    async function doDeleteAccount() {
+        const btn = document.getElementById('confirmDeleteBtn');
+        const errEl = document.getElementById('deleteError');
+        btn.disabled = true;
+        btn.textContent = 'Deleting…';
+        errEl.style.display = 'none';
+        try {
+            const res = await fetch('/settings/delete-account', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                errEl.textContent = data.error || 'Something went wrong.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Delete forever';
+            }
+        } catch (e) {
+            errEl.textContent = 'Request failed. Please try again.';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Delete forever';
+        }
+    }
+    // close modal on backdrop click
+    document.getElementById('deleteOverlay').addEventListener('click', function(e) {
+        if (e.target === this) hideDeleteConfirm();
+    });
+</script>
+</body>
+</html>
